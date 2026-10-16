@@ -1,0 +1,31 @@
+# Rust
+/target
+**/*.rs.bk
+**/target/
+
+# Node / JS
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# 環境與憑證（禁止進版控）
+.env
+.env.local
+.env.*.local
+
+# 日誌
+*.log
+logs/
+
+# 工具產物
+.omo/run-continuation/
+.omo/runtime/
+.codegraph
+
+# OS
+.DS_Store
+
+# 編輯器
+.idea/
+.vscode/
