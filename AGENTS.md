@@ -5,7 +5,7 @@
 | 項目 | 說明 |
 |------|------|
 | **名稱** | owx（opencode-web experiment）|
-| **狀態** | **Inception**（2026-10-17 建立）；尚無程式碼，進行「立規範 → 回溯規格 → 調整功能 → 開發」 |
+| **狀態** | **第一階段**（2026-10-17 起）；尚無程式碼，進行「翻寫規格 → 立框架 → 實作驗證 → 需求回流 → 持續實作」 |
 | **一句話** | 以 opencode + omo 為基礎核心，重做一個**文件優先**的 agent 執行環境 |
 | **授權** | 自有（Proprietary）；**交付物僅含 MIT / 自有程式碼**（見 §2）|
 | **規範** | [`docs/standards/`](docs/standards/)（coding / document / governance）|
@@ -18,13 +18,20 @@
 
 **owx 是包裝 + 自建 harness，不是重寫 AI 邏輯。** 沿用 `opencode`（MIT）為 substrate；`omo`（SUL-1.0）僅作**需求來源**，其功能以 **clean-room** 自建。
 
-**開發工作流**（四階段，依序）：
+**開發工作流（修訂 2026-10-17；見 [ADR-0002](docs/adr/ADR-0002-iterative-spiral-workflow.md)）**——由「規格拍板後才動工」改為**迭代螺旋**：以可行性驗證驅動規格演化。
+
+```mermaid
+flowchart LR
+    S1["① 翻寫功能規格<br/>opencode-web + omo"] --> S2["② 立技術框架與前端界面<br/>Rust + React"]
+    S2 --> S3["③ 實作功能並驗證測試<br/>驗證架構可行性"]
+    S3 --> S4["④ 需求回流<br/>修改/擴增 → 形成文件"]
+    S4 --> S5["⑤ 持續實作"]
+    S5 --> S3
 ```
-① 回溯規格文件 → ② 調整功能 → ③ 開發 → ④ 驗收
-```
-- 目前處於 **① → ②** 交界：基礎核心規格已回溯（`docs/spec/base-core-requirements.md`），待「調整功能」拍板（見 §9）。
-- 規格與現實衝突時：**以實作驗證為準**，並回頭更新本側文件，不無依據選邊。
-- 動工門檻：**規格（§9 待決）未拍板前，不進入步驟 ③ 開發**。
+
+- **目前階段**：第一階段（① → ⑤，循環）。
+- **規格與現實衝突時**：**以實作驗證為準**，回頭更新規格，不無依據選邊。
+- **動工門檻**：**D1 已拍板**（見 §9）；每輪迭代結束**必須回寫規格**——規格落後於實作，視為該輪未完成。
 
 ---
 
@@ -61,25 +68,13 @@
 
 ## 3. 架構（三層 + 微服務）
 
-```
-┌─ 載體層（owx 自有）──────────────────────────────┐
-│  CLI · reverse proxy · MCP server · 鎖定/多帳號    │
-└───────────────┬───────────────────────────────────┘
-                │ spawn / proxy
-┌─ Substrate（opencode，MIT）─────────────────────┐
-│  server(HTTP+SSE) · SDK · plugin API · agents ·    │
-│  tools · sessions · permissions · providers · UI    │
-└───────────────┬───────────────────────────────────┘
-                │ plugin / sidecar
-┌─ Harness 層（owx 自建，clean-room omo）──────────┐
-│  委派編排 · categories · 紀律(plan/verify/todo) ·   │
-│  model router · session/memory                      │
-└───────────────┬───────────────────────────────────┘
-                │ HTTP / MCP（微服務邊界）
-┌─ 模組微服務（未來外掛，各自獨立部署）────────────┐
-│  KAC(知識/ontology) · CodeGraph(code圖) ·           │
-│  Doc-Edit(md編輯) · Standards(規格/測試/品質本體)   │
-└──────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    OW["載體層（owx 自有）<br/>CLI · reverse proxy · MCP server · 鎖定/多帳號"]
+    SUB["Substrate（opencode，MIT）<br/>server(HTTP+SSE) · SDK · plugin API · agents · tools · sessions · permissions · providers · UI"]
+    HAR["Harness 層（owx 自建，clean-room omo）<br/>委派編排 · categories · 紀律(plan/verify/todo) · model router · session/memory"]
+    MOD["模組微服務（未來外掛，各自獨立部署）<br/>KAC(知識/ontology) · CodeGraph(code圖) · Doc-Edit(md編輯) · Standards(規格/測試/品質本體)"]
+    OW -->|"spawn / proxy"| SUB -->|"plugin / sidecar"| HAR -->|"HTTP / MCP（微服務邊界）"| MOD
 ```
 
 **架構決策（不可違反）**：
@@ -91,13 +86,13 @@
 
 ## 4. 技術棧
 
-> ⚠️ **尚未凍結**（見 §9 待決）。以下為方向，拍板後移入本節並記 ADR。
+> **D1 已凍結**（2026-10-17；見 [ADR-0003](docs/adr/ADR-0003-harness-rust-core-react-frontend.md)）：**Harness 核心＝Rust、前端＝React**。D2–D5（§9）仍待決，於迭代中就地決策並記 ADR。
 
 | 層 | 方向 | 狀態 |
 |---|---|---|
-| **Harness 核心** | **Rust**（orchestrator / provider client / tools / router / MCP client / session）| 方向定，語言邊界待拍板 |
+| **Harness 核心** | **Rust**（orchestrator / provider client / tools / router / MCP client / session）| ✅ 凍結（ADR-0003）|
 | **Substrate** | opencode（TypeScript，MIT）| 定 |
-| **前端** | **React**（標準聊天視窗）| 方向定 |
+| **前端** | **React**（標準聊天視窗）| ✅ 凍結（ADR-0003）|
 | **模組** | Rust（KAC 已為 Rust/axum）；外部以 HTTP/MCP 接 | 定 |
 
 - Rust：`edition 2021`、`cargo` workspace；lint 以 `cargo clippy`（`-D warnings`）；格式化 `cargo fmt`。
@@ -192,11 +187,11 @@ git status
 
 ---
 
-## 9. 待決（步驟②「調整功能」前需拍板）
+## 9. 待決（迭代中就地決策並記 ADR）
 
 | # | 決策 | 影響 |
 |---|---|---|
-| D1 | 自建 harness 的**語言/邊界**（Rust 核心 vs 沿用 opencode TS plugin）| 2x+ 工作量差異；架構走向 |
+| ~~D1~~ | **✅ 已定案（2026-10-17）：Harness 核心＝Rust、前端＝React**（[ADR-0003](docs/adr/ADR-0003-harness-rust-core-react-frontend.md)）| 已消解 |
 | D2 | **文件格式**範圍（初期只 md，或含 docx/pdf）| Doc-Edit 模組範圍 |
 | D3 | **標準本體**範圍（規格/測試/品質，是否含治理/合規）| Standards 模組 |
 | D4 | **優先外掛**（KAC vs CodeGraph 先接）與介面（MCP？）| 微服務邊界 |
@@ -208,4 +203,5 @@ git status
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-17 | v0.2 | 工作流由「規格拍板後才動工」改為**迭代螺旋**（§0；ADR-0002）；**D1 定案：Rust 核心＋React 前端**（§4/§9；ADR-0003）；§3 架構圖遷為 Mermaid（依文件標準 §6）。 |
 | 2026-10-17 | v0.1 | 初版：專案建立（Inception）。定四階段工作流、授權治理（§2）、三層+微服務架構、AI 開發紀律、文件標準入口、待決清單。改寫自 ASM `AGENTS.md` 模式，依 owx（文件優先、企業交付、clean-room omo）調整。 |
