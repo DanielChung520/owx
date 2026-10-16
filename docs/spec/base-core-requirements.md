@@ -1,5 +1,8 @@
-# 基礎核心需求規格 v0.1（clean-room 回溯）
+# 基礎核心需求規格（clean-room 回溯）
 
+> 版本：v0.2　|　日期：2026-10-17　|　狀態：Draft
+> 來源：clean-room 回溯自 `opencode`（MIT）公開文件與可觀察行為、`omo`（SUL-1.0）可觀察行為；載體為自有 `opencode-web`。
+>
 > 目的：把「基礎核心 = opencode + omo，以 opencode-web 為載體」的**功能需求**回溯成規格，
 > 作為下一步「**調整功能**」與最終「**開發**」的輸入。
 >
@@ -30,20 +33,12 @@
 
 ## 2. 架構視圖（三層）
 
-```
-┌─ 載體層（ow，自有）──────────────────────────────┐
-│  CLI（profile/lock/launchd）· reverse proxy · MCP server │
-└───────────────┬───────────────────────────────────┘
-                │ spawn / proxy
-┌─ Substrate（opencode，MIT）─────────────────────┐
-│  server(HTTP+SSE) · SDK · plugin API · agents ·   │
-│  tools · sessions · permissions · providers · UI   │
-└───────────────┬───────────────────────────────────┘
-                │ plugin（hooks）
-┌─ Harness 層（omo，SUL → 僅回溯，自建）───────────┐
-│  委派編排 · categories · 紀律(plan/verify/todo) ·  │
-│  team mode · model fallback · skills+embedded MCP  │
-└──────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    OW["載體層（ow，自有）<br/>CLI（profile/lock/launchd）· reverse proxy · MCP server"]
+    SUB["Substrate（opencode，MIT）<br/>server(HTTP+SSE) · SDK · plugin API · agents · tools · sessions · permissions · providers · UI"]
+    HAR["Harness 層（omo，SUL → 僅回溯，自建）<br/>委派編排 · categories · 紀律(plan/verify/todo) · team mode · model fallback · skills+embedded MCP"]
+    OW -->|"spawn / proxy"| SUB -->|"plugin（hooks）"| HAR
 ```
 
 ---
@@ -157,13 +152,30 @@
 
 ---
 
-## 8. 待決（步驟②前需拍板）
+## 8. 待決（迭代中就地決策並記 ADR）
 
-1. **自建 harness 的語言/邊界**：Rust 核心 vs 沿用 opencode 的 TS plugin？ | 
-2. **文件格式**：初期只 md，還是要 docx/pdf？（影響 Doc-Edit 模組）
-3. **標準本體的範圍**：規格/測試/品質之外，是否納入治理/合規？
-4. **優先外掛**：KAC 與 CodeGraph 誰先接？以何介面（MCP？）？
-5. **可交付清單**：企業交付時，明確列出「MIT/自有」元件表（授權閘門）。
+1. ~~自建 harness 的語言/邊界~~ → **✅ 已定案：Rust 核心 + React 前端**（[ADR-0003](../adr/ADR-0003-harness-rust-core-react-frontend.md)）。
+2. **文件格式**：初期只 md，還是要 docx/pdf？（影響 Doc-Edit 模組）→ D2
+3. **標準本體的範圍**：規格/測試/品質之外，是否納入治理/合規？→ D3
+4. **優先外掛**：KAC 與 CodeGraph 誰先接？以何介面（MCP？）？→ D4
+5. **可交付清單**：企業交付時，明確列出「MIT/自有」元件表（授權閘門）。→ D5
+
+---
+
+## 9. 定位與關聯
+
+- 本檔定位為 **core 需求清單**（逐條、原子、可 ID 引用）；**不**重複載體層與交互細節。
+- **整合功能規格**（三層 + Mermaid 架構/交互圖 + FR 驗收條件 + 授權對映）見 [`functional-spec.md`](functional-spec.md)。
+- 載體層（`opencode-web`／ow）之權威規格在其 repo 內：`docs/spec/ow-workspace-layout.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`（連結引用，不複製）。
+
+---
+
+## 10. 變更紀錄
+
+| 日期 | 版本 | 變更 |
+|---|---|---|
+| 2026-10-17 | v0.2 | 補 §2.2 必備表頭（版本/日期/狀態/來源）；§2 ASCII 架構視圖遷為 Mermaid（依文件標準 §6）；§8 D1 標為已定案並連 ADR-0003；新增 §9 定位與關聯、§10 變更紀錄。 |
+| 2026-10-17 | v0.1 | 初版：clean-room 回溯 FR A–I、NFR、邊界、來源對映、缺口、待決。 |
 
 ---
 
