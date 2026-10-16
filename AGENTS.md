@@ -164,6 +164,7 @@ owx/
 ├── docs/
 │   ├── standards/            # 開發規範（coding / document / governance）
 │   ├── spec/                 # 需求規格（clean-room 回溯）
+│   ├── design/               # 技術設計（模組/介面/資料/前端/測試）
 │   └── adr/                  # 架構決策記錄
 └── (待建) src/ · crates/ · packages/ · apps/
 ```
