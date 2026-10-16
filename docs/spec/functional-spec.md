@@ -1,6 +1,6 @@
 # owx 整合功能規格（functional-spec.md）
 
-> 版本：v0.1　|　日期：2026-10-17　|　狀態：Draft
+> 版本：v0.2　|　日期：2026-10-17　|　狀態：Draft
 > 來源：整合自 [`AGENTS.md`](../../AGENTS.md)、[`base-core-requirements.md`](base-core-requirements.md)、[`ADR-0001`](../adr/ADR-0001-substrate-opencode-cleanroom-omo.md)、[`ADR-0002`](../adr/ADR-0002-iterative-spiral-workflow.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`document-standards.md`](../standards/document-standards.md)、[`licensing.md`](../standards/governance/licensing.md)，以及載體 repo `opencode-web` 之規格（`docs/spec/ow-workspace-layout.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`、`README.md`、`AGENTS.md`）。
 
 ---
@@ -47,6 +47,7 @@
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-17 | v0.2 | §3 增「覆蓋率」註記：Substrate 群已對照 opencode 官方文件補齊（連結 base-core v0.3）；§8.2 增 Substrate 覆蓋率待收斂項。 |
 | 2026-10-17 | v0.1 | 初版：整合三層架構、載體／Substrate／Harness FR、交互流程、NFR、來源對映與授權、缺口與待決。 |
 
 ---
@@ -300,6 +301,8 @@ flowchart TB
 | FR-G | 擴充機制（plugin／skill／command／MCP） | [`base-core-requirements.md`](base-core-requirements.md) §3 FR-G |
 | FR-H | UI（TUI／Web UI／iframe 可嵌入） | [`base-core-requirements.md`](base-core-requirements.md) §3 FR-H |
 | FR-I | 部署與多租戶（內外網分離／鎖定／CORS／launchd） | [`base-core-requirements.md`](base-core-requirements.md) §3 FR-I |
+
+> **覆蓋率**：base-core §3 已對照 opencode 官方文件（v1 `opencode.ai/docs`、v2 `opencode.ai/v2/docs`）補齊各群遺漏項（base-core v0.3，repo `anomalyco/opencode`）；本節以連結繼承，不重複。
 
 **FR-SUB-1｜SSE 事件流為即時狀態來源**
 Substrate 以 SSE（`/global/event`）推送 session／訊息／權限請求等狀態；載體層只轉發，不自行產生事件。
@@ -580,6 +583,7 @@ sequenceDiagram
 5. **Harness 尚未有程式碼**：FR-HAR-* 為 clean-room 需求，實作與測試待迭代螺旋後續輪次產出。
 6. **模組微服務未展開**：KAC／CodeGraph／Doc-Edit／Standards 的介面與契約未在本規格定義（見 D2 至 D4）。
 7. **待確認**：載體層部分能力（如 `/__ow-masters` 的完整契約、session 刪除注入的邊界）僅見於載體 repo 變更紀錄，未收斂為穩定規格，須回 carrier repo 確認後補入。
+8. **Substrate 覆蓋率**：base-core §3 已對照 opencode 官方文件補齊（v0.3）；但 opencode v2 差異與尚未文件化之行為未收斂，須迭代確認。
 
 ### 8.3 迭代回寫義務
 
