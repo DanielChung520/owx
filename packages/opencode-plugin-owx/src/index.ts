@@ -13,7 +13,7 @@
 
 import type { Hooks, Plugin, PluginInput } from "@opencode-ai/plugin";
 
-const DEFAULT_PORT = 13100;
+const DEFAULT_PORT = 13110;
 const DEFAULT_TIMEOUT_MS = 250;
 
 type HookDecision =

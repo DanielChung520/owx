@@ -11,7 +11,7 @@ owx 的 **thin opencode plugin shim**（骨架階段）。
 ## 行為
 
 - 掛載 hook：`tool.execute.before`（骨架階段）。
-- 轉呼叫：`POST http://127.0.0.1:${OWX_HARNESS_PORT ?? 13100}/rpc/hook`，body `{ hook, payload }`，逾時 250ms。
+- 轉呼叫：`POST http://127.0.0.1:${OWX_HARNESS_PORT ?? 13110}/rpc/hook`，body `{ hook, payload }`，逾時 250ms。
 - **fail-open**：sidecar 不可達/逾時/非 2xx 時，一律放行，不阻擋 agent。
 - 若 sidecar 回 `block`，throw 以阻擋該工具呼叫。
 
