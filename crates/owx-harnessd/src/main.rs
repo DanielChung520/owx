@@ -22,6 +22,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(DEFAULT_PORT);
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
 
-    owx_boundary::serve(addr).await?;
+    owx_boundary::serve(addr, owx_boundary::AppState::from_env()).await?;
     Ok(())
 }

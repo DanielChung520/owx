@@ -7,6 +7,8 @@ publish.workspace = true
 
 [dependencies]
 owx-core = { path = "../owx-core" }
+owx-tools = { path = "../owx-tools" }
+owx-discipline = { path = "../owx-discipline" }
 axum = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
@@ -15,5 +17,6 @@ tracing = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+owx-tools = { path = "../owx-tools" }
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"

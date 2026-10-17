@@ -301,6 +301,8 @@ dependencies = [
  "axum",
  "http-body-util",
  "owx-core",
+ "owx-discipline",
+ "owx-tools",
  "serde",
  "serde_json",
  "thiserror",
