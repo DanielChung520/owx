@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-export function MessageInput({ disabled }: { disabled: boolean }): JSX.Element {
+export function MessageInput({
+  disabled,
+  onSend,
+}: {
+  disabled: boolean;
+  onSend: (text: string) => void;
+}): JSX.Element {
   const [value, setValue] = useState("");
 
   return (
@@ -8,8 +14,11 @@ export function MessageInput({ disabled }: { disabled: boolean }): JSX.Element {
       className="composer"
       onSubmit={(event) => {
         event.preventDefault();
-        // TODO(iteration): 送出至 opencode session（經載體 proxy）。
-        setValue("");
+        const text = value.trim();
+        if (text !== "") {
+          onSend(text);
+          setValue("");
+        }
       }}
     >
       <label className="sr-only" htmlFor="prompt">
