@@ -8,6 +8,7 @@
   "scripts": {
     "typecheck": "pnpm -r --if-present typecheck",
     "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
     "gate:cleanroom": "node scripts/cleanroom-scan.mjs",
     "gate:license": "node scripts/license-check.mjs",
     "gate:docs": "node scripts/check-docs.mjs",
