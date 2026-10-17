@@ -10,6 +10,7 @@
     "build": "pnpm -r --if-present build",
     "gate:cleanroom": "node scripts/cleanroom-scan.mjs",
     "gate:license": "node scripts/license-check.mjs",
-    "gate:docs": "node scripts/check-docs.mjs"
+    "gate:docs": "node scripts/check-docs.mjs",
+    "gate:sbom": "node scripts/sbom.mjs"
   }
 }

@@ -46,6 +46,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: node scripts/cleanroom-scan.mjs
       - run: node scripts/license-check.mjs
+      - run: node scripts/sbom.mjs > sbom.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.md
 
   docs:
     runs-on: ubuntu-latest
