@@ -5,6 +5,9 @@
 resolver = "2"
 members = [
     "crates/owx-core",
+    "crates/owx-config",
+    "crates/owx-tools",
+    "crates/owx-discipline",
     "crates/owx-boundary",
     "crates/owx-harnessd",
 ]

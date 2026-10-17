@@ -310,12 +310,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "owx-config"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "owx-core"
 version = "0.0.0"
 dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "owx-discipline"
+version = "0.0.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -326,6 +342,13 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "owx-tools"
+version = "0.0.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
