@@ -221,12 +221,20 @@ pnpm -r build
 - ❗ **憑證**：tunnel token 為機密，**嚴禁寫入版控或文件**（本節只記主機名與埠對映）。
 - ⚠️ **安全**：sidecar 端點**未內建驗證**，其中 `/rpc/delegate/run` 會建立 opencode session（觸發 agent 執行）。對外暴露前**必加存取控制**（Cloudflare Access 或載體 proxy 的鎖定/密碼）；正式對外入口建議走載體（`opencode-web`：內外網分離＋鎖定＋Basic，見 base-core FR-I-1）。
 
+**上線前待調整（go-live TODO；先附記，部署時處理）**
+1. **存取控制**：對 `owx.aiconn.ai` 加 Cloudflare Access（SSO/OTP），或改走載體（`opencode-web` 4096，鎖定＋Basic）。
+2. **對外入口決策**：維持公開 sidecar `13100`，或改公開載體 `4096`（架構正解，FR-I-1）；決策後更新上表。
+3. **sidecar 輕量驗證（可選）**：為 `/rpc/*` 加 bearer（如 `OWX_TOKEN`），未帶則 401。
+4. **環境**：Node 升 ≥22（前端）；瀏覽器直連時的 CORS / allowed origins。
+5. **SBOM 交付**：上線前以 `scripts/sbom.mjs` 產出元件授權表。
+
 ---
 
 ## 11. 變更紀錄
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-17 | v0.5 | §10 增「上線前待調整（go-live TODO）」：存取控制、入口決策、sidecar 驗證、Node ≥22、SBOM——先附記、部署時處理。 |
 | 2026-10-17 | v0.4 | 新增 §10「對外存取（Cloudflare Tunnel）」：`owx.aiconn.ai → 127.0.0.1:13100`，remote-managed tunnel 之 dashboard 設定步驟與安全警示；§8 現況更新為 step② 完成。 |
 | 2026-10-17 | v0.3 | 決策原則定為「參照 opencode／opencode-web」；**D2–D5 全部定案**（§9）；新增 ADR-0005（模型注入，Accepted）、ADR-0006（外掛介面＝MCP/HTTPS，先不實作外掛）。 |
 | 2026-10-17 | v0.2 | 工作流由「規格拍板後才動工」改為**迭代螺旋**（§0；ADR-0002）；**D1 定案：Rust 核心＋React 前端**（§4/§9；ADR-0003）；§3 架構圖遷為 Mermaid（依文件標準 §6）。 |
