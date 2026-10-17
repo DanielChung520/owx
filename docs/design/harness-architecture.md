@@ -110,7 +110,7 @@ flowchart TB
 |---|---|---|---|
 | `owx-core` | 共用型別與特徵（ports）；**無 I/O** | （無） | NFR-13 |
 | `owx-config` | 設定載入與分層 deep-merge、未知鍵拒絕 | `owx-core` | FR-F-1、FR-F-2 |
-| `owx-provider` | provider registry 與憑證解析、統一呼叫介面 | `owx-core` | FR-E-1、FR-E-4 |
+| `owx-provider`（**待確認**） | provider registry 與憑證解析、統一呼叫介面。ADR-0005 下 harness 可能**僅選鏈、用 opencode providers**，自建 provider client 或不需要 | `owx-core` | FR-E-1、FR-E-4 |
 | `owx-session` | harness 側 session 政策與 boulder 狀態（以 session id 為鍵） | `owx-core` | FR-C-5、FR-D-1 |
 | `owx-tools` | harness 工具實作與工具政策（白名單／停用） | `owx-core` | FR-B-6、FR-HAR-3 |
 | `owx-modules` | 模組微服務的 HTTP／MCP client 邊界 | `owx-core` | NFR-2、FR-G-4 |
@@ -266,7 +266,7 @@ sequenceDiagram
 | **hook 覆蓋不足／API 漂移** | opencode plugin hook 可能未覆蓋全部所需攔截點，或版本升級改變 hook 契約 | 以 walking skeleton 先驗證 hook 覆蓋；pin opencode 版本；漂移隔離於 `owx-boundary` 單一模組 | ADR-0004、FR-G-1、NFR-3 |
 | **延遲／失敗耦合** | 每次 prompt／工具呼叫跨語言往返 sidecar，增延遲；sidecar 故障可能阻斷迴圈 | 非關鍵 hook **fail-open**（advisory，失敗則放行）；安全關鍵（`permission.ask`）**fail-closed**；設逾時與健康檢查 | ADR-0004、FR-SUB-2、NFR-4 |
 | **雙重編排** | harness 與 opencode 同時管理 session／訊息，可能狀態分歧 | opencode 擁有訊息／session 儲存；harness 只存**政策與 boulder 狀態**，以 session id 為鍵 | ADR-0004、FR-C-5、FR-D-1 |
-| **router 與 opencode provider-fallback 重疊** | opencode 有同 model ID 的 provider fallback，harness router 另有模型鏈，兩者可能互相干擾 | harness router 擁有**鏈選擇**，經 `chat.params` 下傳解析後 model；opencode 只負責同 ID provider 層 fallback | FR-E-2、FR-E-3、FR-HAR-12、FR-HAR-13 |
+| **router 與 opencode provider-fallback 重疊** | opencode 有同 model ID 的 provider fallback，harness router 另有模型鏈，兩者可能互相干擾 | harness router 擁有**鏈選擇**，以 **agent 設定／session 建立**下傳解析後 model（`chat.params` 無 model 欄位，已 live 驗證）；opencode 只負責同 ID provider 層 fallback（[ADR-0005](../adr/ADR-0005-model-chain-injection-path.md)） | FR-E-2、FR-E-3、FR-HAR-12、FR-HAR-13 |
 | **授權侵蝕** | 開發中不慎引入 SUL／非可交付元件，或沿用 omo 品牌 | 交付物僅 MIT／自有；`owx-boundary` 為授權邊界；PR 閘門與元件授權表；本檔不含 omo 內容 | NFR-1、ADR-0001、ADR-0004 |
 
 ---
