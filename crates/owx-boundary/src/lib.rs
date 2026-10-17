@@ -4,6 +4,8 @@
 //! `POST /mcp`（opencode model → sidecar，最小 JSON-RPC）。
 //! 契約見 `docs/design/interfaces.md`；決策見 `docs/adr/ADR-0004-harness-opencode-boundary.md`。
 
+pub mod opencode;
+
 use axum::{
     extract::{Json, State},
     http::StatusCode,
@@ -25,6 +27,7 @@ pub struct AppState {
     policy: Arc<ToolPolicy>,
     doom: Arc<Mutex<DoomLoopGuard>>,
     categories: Arc<CategoryRegistry>,
+    opencode: Option<opencode::OpenCodeClient>,
 }
 
 impl AppState {
@@ -33,10 +36,16 @@ impl AppState {
             policy: Arc::new(policy),
             doom: Arc::new(Mutex::new(DoomLoopGuard::new(doom_threshold))),
             categories: Arc::new(categories),
+            opencode: None,
         }
     }
 
-    /// 由環境變數建構：`OWX_DENY_TOOLS`、`OWX_DOOM_THRESHOLD`（預設 3）、`OWX_DEFAULT_MODEL`。
+    pub fn with_opencode(mut self, client: opencode::OpenCodeClient) -> Self {
+        self.opencode = Some(client);
+        self
+    }
+
+    /// 由環境變數建構：`OWX_DENY_TOOLS`、`OWX_DOOM_THRESHOLD`（預設 3）、`OWX_DEFAULT_MODEL`、`OWX_OPENCODE_URL`。
     pub fn from_env() -> Self {
         let rules = std::env::var("OWX_DENY_TOOLS")
             .unwrap_or_default()
@@ -60,7 +69,11 @@ impl AppState {
             skills: Vec::new(),
             allow_delegate: true,
         });
-        Self::new(ToolPolicy::new(rules), threshold, categories)
+        let state = Self::new(ToolPolicy::new(rules), threshold, categories);
+        match std::env::var("OWX_OPENCODE_URL") {
+            Ok(url) if !url.is_empty() => state.with_opencode(opencode::OpenCodeClient::new(url)),
+            _ => state,
+        }
     }
 }
 
@@ -76,6 +89,7 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(health))
         .route("/rpc/hook", post(rpc_hook))
         .route("/rpc/delegate", post(rpc_delegate))
+        .route("/rpc/delegate/run", post(rpc_delegate_run))
         .route("/mcp", post(mcp))
         .with_state(state)
 }
@@ -114,6 +128,8 @@ async fn rpc_hook(
 #[derive(serde::Deserialize)]
 struct DelegateBody {
     category: String,
+    #[serde(default)]
+    prompt: Option<String>,
     #[serde(flatten)]
     request: DelegationRequest,
 }
@@ -132,6 +148,47 @@ async fn rpc_delegate(
                 Json(json!({ "error": error_name(err) })),
             )
         })
+}
+
+async fn rpc_delegate_run(
+    State(state): State<AppState>,
+    Json(body): Json<DelegateBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let plan = state
+        .categories
+        .plan(&body.category, body.request)
+        .map_err(|err| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": error_name(err) })),
+            )
+        })?;
+    let Some(client) = state.opencode.as_ref() else {
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({ "error": "opencode_unconfigured" })),
+        ));
+    };
+    let session_id = client.create_session().await.map_err(|err| {
+        (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({ "error": format!("create_session: {err}") })),
+        )
+    })?;
+    client
+        .send_message(&session_id, &body.prompt.unwrap_or_default())
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({ "error": format!("send_message: {err}") })),
+            )
+        })?;
+    Ok(Json(json!({
+        "session_id": session_id,
+        "category": plan.category,
+        "model_chain": plan.model_chain,
+    })))
 }
 
 fn error_name(err: DelegateError) -> &'static str {

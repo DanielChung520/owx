@@ -11,6 +11,7 @@ owx-tools = { path = "../owx-tools" }
 owx-discipline = { path = "../owx-discipline" }
 owx-orchestrator = { path = "../owx-orchestrator" }
 axum = { workspace = true }
+reqwest = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
