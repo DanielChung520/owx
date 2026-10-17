@@ -53,6 +53,7 @@ async function callSidecar(
 export const OwxPlugin: Plugin = async (
   _input: PluginInput,
 ): Promise<Hooks> => {
+  console.error(`[owx] plugin loaded; sidecar=${sidecarHookUrl()}`);
   return {
     "tool.execute.before": async (input, output) => {
       const decision = await callSidecar("tool.execute.before", {

@@ -37,6 +37,11 @@ async fn health() -> Json<serde_json::Value> {
 async fn rpc_hook(
     Json(req): Json<HookRequest>,
 ) -> Result<Json<HookDecision>, (StatusCode, Json<serde_json::Value>)> {
+    if req.hook == "event" {
+        tracing::debug!(hook = %req.hook, "hook request received");
+    } else {
+        tracing::info!(hook = %req.hook, "hook request received");
+    }
     match decide(&req) {
         Ok(decision) => Ok(Json(decision)),
         Err(err) => Err((

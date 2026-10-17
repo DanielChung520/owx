@@ -601,7 +601,7 @@ pub struct ErrorPayload {
 
 ### 7.4 已驗證：opencode plugin hook 表面（1.18.x）
 
-> 驗證方式：對照 `@opencode-ai/plugin`（1.18.x）之 `Hooks` 型別定義與既有真實外掛；shim 已對 `Hooks` 做**編譯期驗證**（`tsc` 通過）。live 執行驗證待後續。
+> 驗證方式：對照 `@opencode-ai/plugin`（1.18.x）之 `Hooks` 型別定義與既有真實外掛；shim 對 `Hooks` 做**編譯期驗證**（`tsc` 通過）；並以**真實 opencode 執行**做 live 驗證（詳見本節末）。
 
 與本專案相關的 hook：
 
@@ -622,7 +622,13 @@ pub struct ErrorPayload {
 2. `tool.execute.before` 可改寫 `args`、但無 block 欄位 → 阻擋以 **throw** 實作。
 3. ⚠️ **模型鏈／fallback（FR-HAR-12/13）不經 `chat.params`**（output 無 model 欄位）→ 注入路徑須改由 agent 設定／SDK 設定 session model／provider hook 達成（**待決**）。
 
-**待決（新增）**：FR-HAR-12/13 模型注入路徑；`tool.execute.before` throw 的正式行為需 live 驗證。
+**Live 驗證（真實 opencode `run`，載入 shim → sidecar `owx-harnessd`）**：
+
+- 外掛載入成功；hook 觸發並到達 sidecar：`event`（高頻）、`chat.message`、`chat.params`、**`tool.execute.before`**（工具執行時）。
+- 發現：**`event` hook 觸發極頻繁**（單次執行數十至上百次）→ harness 不得在 `event` 同步做重工；須節流／非同步，日誌以 debug 級記錄（已於 `owx-boundary` 調整）。
+- `tool.execute.before` 本次回 `allow`（未觸發 throw 路徑）；throw 在 agent 端的行為仍待專項驗證。
+
+**待決（新增）**：FR-HAR-12/13 模型注入路徑；`tool.execute.before` throw 在 agent 端的行為。
 
 ---
 
