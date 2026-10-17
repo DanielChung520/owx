@@ -14,6 +14,14 @@ pub struct Category {
     pub allow_delegate: bool,
 }
 
+impl Category {
+    /// reactive fallback：模型鏈中 `current` 之後的下一個模型。
+    pub fn next_model(&self, current: &str) -> Option<&str> {
+        let index = self.model_chain.iter().position(|m| m == current)?;
+        self.model_chain.get(index + 1).map(String::as_str)
+    }
+}
+
 /// category 註冊表。
 #[derive(Debug, Clone, Default)]
 pub struct CategoryRegistry {
@@ -148,6 +156,19 @@ mod tests {
             registry().plan("research", req),
             Err(DelegateError::DepthExceeded)
         );
+    }
+
+    #[test]
+    fn category_next_model_walks_chain() {
+        let category = Category {
+            name: "x".into(),
+            model_chain: vec!["a".into(), "b".into()],
+            skills: vec![],
+            allow_delegate: true,
+        };
+        assert_eq!(category.next_model("a"), Some("b"));
+        assert_eq!(category.next_model("b"), None);
+        assert_eq!(category.next_model("z"), None);
     }
 
     #[test]

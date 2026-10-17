@@ -13,7 +13,7 @@ use axum::{
     Router,
 };
 use owx_core::{HarnessError, HookDecision, HookRequest};
-use owx_discipline::DoomLoopGuard;
+use owx_discipline::{DoomLoopGuard, IntentGate};
 use owx_orchestrator::{
     Category, CategoryRegistry, DelegateError, DelegationPlan, DelegationRequest,
 };
@@ -90,6 +90,8 @@ pub fn router(state: AppState) -> Router {
         .route("/rpc/hook", post(rpc_hook))
         .route("/rpc/delegate", post(rpc_delegate))
         .route("/rpc/delegate/run", post(rpc_delegate_run))
+        .route("/rpc/intent", post(rpc_intent))
+        .route("/rpc/fallback", post(rpc_fallback))
         .route("/mcp", post(mcp))
         .with_state(state)
 }
@@ -189,6 +191,37 @@ async fn rpc_delegate_run(
         "category": plan.category,
         "model_chain": plan.model_chain,
     })))
+}
+
+#[derive(serde::Deserialize)]
+struct IntentBody {
+    text: String,
+}
+
+async fn rpc_intent(Json(body): Json<IntentBody>) -> Json<serde_json::Value> {
+    Json(json!({ "intent": IntentGate::classify(&body.text) }))
+}
+
+#[derive(serde::Deserialize)]
+struct FallbackBody {
+    category: String,
+    failed_model: String,
+}
+
+async fn rpc_fallback(
+    State(state): State<AppState>,
+    Json(body): Json<FallbackBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let Some(category) = state.categories.get(&body.category) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "unknown_category" })),
+        ));
+    };
+    match category.next_model(&body.failed_model) {
+        Some(next) => Ok(Json(json!({ "next_model": next }))),
+        None => Err((StatusCode::NOT_FOUND, Json(json!({ "error": "exhausted" })))),
+    }
 }
 
 fn error_name(err: DelegateError) -> &'static str {

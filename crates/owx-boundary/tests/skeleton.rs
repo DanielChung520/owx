@@ -202,3 +202,78 @@ async fn delegate_rejects_worker() {
     let body = body_json(resp).await;
     assert_eq!(body["error"], "worker_cannot_delegate");
 }
+
+#[tokio::test]
+async fn intent_classifies() {
+    let payload = serde_json::json!({ "text": "fix the login bug" }).to_string();
+    let resp = owx_boundary::router(owx_boundary::AppState::default())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/rpc/intent")
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(body_json(resp).await["intent"], "fix");
+}
+
+#[tokio::test]
+async fn fallback_walks_chain() {
+    use owx_orchestrator::{Category, CategoryRegistry};
+    let mut categories = CategoryRegistry::default();
+    categories.register(Category {
+        name: "general".into(),
+        model_chain: vec!["a".into(), "b".into()],
+        skills: vec![],
+        allow_delegate: true,
+    });
+    let state = owx_boundary::AppState::new(owx_tools::ToolPolicy::default(), 3, categories);
+    let payload = serde_json::json!({ "category": "general", "failed_model": "a" }).to_string();
+    let resp = owx_boundary::router(state)
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/rpc/fallback")
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(body_json(resp).await["next_model"], "b");
+}
+
+#[tokio::test]
+async fn fallback_reports_exhausted() {
+    use owx_orchestrator::{Category, CategoryRegistry};
+    let mut categories = CategoryRegistry::default();
+    categories.register(Category {
+        name: "general".into(),
+        model_chain: vec!["a".into()],
+        skills: vec![],
+        allow_delegate: true,
+    });
+    let state = owx_boundary::AppState::new(owx_tools::ToolPolicy::default(), 3, categories);
+    let payload = serde_json::json!({ "category": "general", "failed_model": "a" }).to_string();
+    let resp = owx_boundary::router(state)
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/rpc/fallback")
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(body_json(resp).await["error"], "exhausted");
+}
