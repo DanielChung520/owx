@@ -9,6 +9,7 @@ publish.workspace = true
 owx-core = { path = "../owx-core" }
 owx-tools = { path = "../owx-tools" }
 owx-discipline = { path = "../owx-discipline" }
+owx-orchestrator = { path = "../owx-orchestrator" }
 axum = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
@@ -18,5 +19,6 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 owx-tools = { path = "../owx-tools" }
+owx-orchestrator = { path = "../owx-orchestrator" }
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"

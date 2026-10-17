@@ -31,7 +31,7 @@ impl CategoryRegistry {
 }
 
 /// 委派請求的上下文。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DelegationRequest {
     pub depth: u32,
     pub max_depth: u32,
@@ -40,7 +40,8 @@ pub struct DelegationRequest {
 }
 
 /// 委派拒絕原因。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DelegateError {
     UnknownCategory,
     DepthExceeded,
@@ -49,7 +50,7 @@ pub enum DelegateError {
 }
 
 /// 委派計畫（決策結果）。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DelegationPlan {
     pub category: String,
     pub model_chain: Vec<String>,

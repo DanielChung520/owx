@@ -12,6 +12,9 @@ use axum::{
 };
 use owx_core::{HarnessError, HookDecision, HookRequest};
 use owx_discipline::DoomLoopGuard;
+use owx_orchestrator::{
+    Category, CategoryRegistry, DelegateError, DelegationPlan, DelegationRequest,
+};
 use owx_tools::{Action, Rule, ToolPolicy};
 use serde_json::json;
 use std::net::SocketAddr;
@@ -21,17 +24,19 @@ use std::sync::{Arc, Mutex};
 pub struct AppState {
     policy: Arc<ToolPolicy>,
     doom: Arc<Mutex<DoomLoopGuard>>,
+    categories: Arc<CategoryRegistry>,
 }
 
 impl AppState {
-    pub fn new(policy: ToolPolicy, doom_threshold: u32) -> Self {
+    pub fn new(policy: ToolPolicy, doom_threshold: u32, categories: CategoryRegistry) -> Self {
         Self {
             policy: Arc::new(policy),
             doom: Arc::new(Mutex::new(DoomLoopGuard::new(doom_threshold))),
+            categories: Arc::new(categories),
         }
     }
 
-    /// 由環境變數建構：`OWX_DENY_TOOLS`（逗號分隔 glob）、`OWX_DOOM_THRESHOLD`（預設 3）。
+    /// 由環境變數建構：`OWX_DENY_TOOLS`、`OWX_DOOM_THRESHOLD`（預設 3）、`OWX_DEFAULT_MODEL`。
     pub fn from_env() -> Self {
         let rules = std::env::var("OWX_DENY_TOOLS")
             .unwrap_or_default()
@@ -43,13 +48,25 @@ impl AppState {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(3);
-        Self::new(ToolPolicy::new(rules), threshold)
+        let default_model = std::env::var("OWX_DEFAULT_MODEL").unwrap_or_default();
+        let mut categories = CategoryRegistry::default();
+        categories.register(Category {
+            name: "general".into(),
+            model_chain: if default_model.is_empty() {
+                Vec::new()
+            } else {
+                vec![default_model]
+            },
+            skills: Vec::new(),
+            allow_delegate: true,
+        });
+        Self::new(ToolPolicy::new(rules), threshold, categories)
     }
 }
 
 impl Default for AppState {
     fn default() -> Self {
-        Self::new(ToolPolicy::default(), 3)
+        Self::new(ToolPolicy::default(), 3, CategoryRegistry::default())
     }
 }
 
@@ -58,6 +75,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/rpc/hook", post(rpc_hook))
+        .route("/rpc/delegate", post(rpc_delegate))
         .route("/mcp", post(mcp))
         .with_state(state)
 }
@@ -90,6 +108,38 @@ async fn rpc_hook(
             StatusCode::BAD_REQUEST,
             Json(json!({ "error": format!("unhandled hook: {other}") })),
         )),
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct DelegateBody {
+    category: String,
+    #[serde(flatten)]
+    request: DelegationRequest,
+}
+
+async fn rpc_delegate(
+    State(state): State<AppState>,
+    Json(body): Json<DelegateBody>,
+) -> Result<Json<DelegationPlan>, (StatusCode, Json<serde_json::Value>)> {
+    state
+        .categories
+        .plan(&body.category, body.request)
+        .map(Json)
+        .map_err(|err| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": error_name(err) })),
+            )
+        })
+}
+
+fn error_name(err: DelegateError) -> &'static str {
+    match err {
+        DelegateError::UnknownCategory => "unknown_category",
+        DelegateError::DepthExceeded => "depth_exceeded",
+        DelegateError::WorkerCannotDelegate => "worker_cannot_delegate",
+        DelegateError::BudgetExhausted => "budget_exhausted",
     }
 }
 

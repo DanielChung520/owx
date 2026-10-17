@@ -74,8 +74,11 @@ async fn mcp_tools_list_exposes_status() {
 #[tokio::test]
 async fn hook_blocks_denied_tool() {
     use owx_tools::{Action, Rule, ToolPolicy};
-    let state =
-        owx_boundary::AppState::new(ToolPolicy::new(vec![Rule::new("bash", Action::Deny)]), 3);
+    let state = owx_boundary::AppState::new(
+        ToolPolicy::new(vec![Rule::new("bash", Action::Deny)]),
+        3,
+        owx_orchestrator::CategoryRegistry::default(),
+    );
     let payload = serde_json::json!({
         "hook": "tool.execute.before",
         "payload": { "tool": "bash", "args": { "cmd": "ls" } }
@@ -99,7 +102,11 @@ async fn hook_blocks_denied_tool() {
 
 #[tokio::test]
 async fn hook_blocks_on_doom_loop() {
-    let state = owx_boundary::AppState::new(owx_tools::ToolPolicy::default(), 3);
+    let state = owx_boundary::AppState::new(
+        owx_tools::ToolPolicy::default(),
+        3,
+        owx_orchestrator::CategoryRegistry::default(),
+    );
     let router = owx_boundary::router(state);
     let payload = serde_json::json!({
         "hook": "tool.execute.before",
@@ -124,4 +131,74 @@ async fn hook_blocks_on_doom_loop() {
         last = body_json(resp).await;
     }
     assert_eq!(last["decision"], "block");
+}
+
+#[tokio::test]
+async fn delegate_returns_plan() {
+    use owx_orchestrator::{Category, CategoryRegistry};
+    let mut categories = CategoryRegistry::default();
+    categories.register(Category {
+        name: "general".into(),
+        model_chain: vec!["m/1".into(), "m/2".into()],
+        skills: vec!["explore".into()],
+        allow_delegate: true,
+    });
+    let state = owx_boundary::AppState::new(owx_tools::ToolPolicy::default(), 3, categories);
+    let payload = serde_json::json!({
+        "category": "general",
+        "depth": 0,
+        "max_depth": 2,
+        "is_worker": false,
+        "remaining_budget": 3
+    })
+    .to_string();
+    let resp = owx_boundary::router(state)
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/rpc/delegate")
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let body = body_json(resp).await;
+    assert_eq!(body["category"], "general");
+    assert_eq!(body["model_chain"][0], "m/1");
+    assert_eq!(body["skills"][0], "explore");
+}
+
+#[tokio::test]
+async fn delegate_rejects_worker() {
+    let state = owx_boundary::AppState::new(
+        owx_tools::ToolPolicy::default(),
+        3,
+        owx_orchestrator::CategoryRegistry::default(),
+    );
+    let payload = serde_json::json!({
+        "category": "general",
+        "depth": 0,
+        "max_depth": 2,
+        "is_worker": true,
+        "remaining_budget": 3
+    })
+    .to_string();
+    let resp = owx_boundary::router(state)
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/rpc/delegate")
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    let body = body_json(resp).await;
+    assert_eq!(body["error"], "worker_cannot_delegate");
 }

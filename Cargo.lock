@@ -302,6 +302,7 @@ dependencies = [
  "http-body-util",
  "owx-core",
  "owx-discipline",
+ "owx-orchestrator",
  "owx-tools",
  "serde",
  "serde_json",
