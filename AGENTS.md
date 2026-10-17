@@ -211,13 +211,21 @@ pnpm -r build
 
 > owx 的對外入口由 **Cloudflare Tunnel** 提供（與載體 `opencode-web` 共用同一 tunnel）。
 
+**本機埠對映**
+
+| 服務 | 本機 | 說明 |
+|---|---|---|
+| 前端 UI（React `apps/web`）| `127.0.0.1:13000` | `pnpm --filter @owx/web dev`（dev proxy → opencode 13001；env `OWX_WEB_PORT`）|
+| opencode（substrate）API | `127.0.0.1:13001` | pipeline 處理（session／tool／provider）|
+| owx harness sidecar | `127.0.0.1:13100` | `/health`、`/rpc/*`、`/mcp`（API；env `OWX_HARNESS_PORT`）|
+
+**公開主機名**
+
 | 公開主機名 | 目標（本機）| 用途 |
 |---|---|---|
-| `owx.aiconn.ai` | `http://127.0.0.1:13100` | owx harness sidecar（`/health`、`/rpc/*`、`/mcp`）|
-
-- **port**：owx sidecar 綁 loopback `127.0.0.1:13100`（env `OWX_HARNESS_PORT`，預設 13100；見 §8）。
+| `owx.aiconn.ai` | `http://127.0.0.1:13000` | **前端 UI**（對人看）；若要公開 harness API 端點則另指 13100 |
 - **tunnel 類型**：**remote-managed**（`cloudflared tunnel run --token`，systemd `cloudflared.service`）；**ingress（公開主機名 → 服務）在 Cloudflare Zero Trust dashboard 設定**，本機無 `config.yml`。
-- **設定步驟（dashboard）**：Zero Trust → Networks → Tunnels → 選該 tunnel → **Public Hostname** → Add：Subdomain `owx`、Domain `aiconn.ai`、Service `HTTP` → `127.0.0.1:13100`；儲存即生效（DNS CNAME 由 Cloudflare 自動建立）。
+- **設定步驟（dashboard）**：Zero Trust → Networks → Tunnels → 選該 tunnel → **Public Hostname** → Add：Subdomain `owx`、Domain `aiconn.ai`、Service `HTTP` → `127.0.0.1:13000`（前端）；儲存即生效（DNS CNAME 由 Cloudflare 自動建立）。
 - ❗ **憑證**：tunnel token 為機密，**嚴禁寫入版控或文件**（本節只記主機名與埠對映）。
 - ⚠️ **安全**：sidecar 端點**未內建驗證**，其中 `/rpc/delegate/run` 會建立 opencode session（觸發 agent 執行）。對外暴露前**必加存取控制**（Cloudflare Access 或載體 proxy 的鎖定/密碼）；正式對外入口建議走載體（`opencode-web`：內外網分離＋鎖定＋Basic，見 base-core FR-I-1）。
 
