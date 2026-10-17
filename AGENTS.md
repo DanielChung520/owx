@@ -200,10 +200,10 @@ pnpm -r build
 | # | 決策 | 影響 |
 |---|---|---|
 | ~~D1~~ | **✅ 已定案（2026-10-17）：Harness 核心＝Rust、前端＝React**（[ADR-0003](docs/adr/ADR-0003-harness-rust-core-react-frontend.md)）| 已消解 |
-| D2 | **文件格式**範圍（初期只 md，或含 docx/pdf）| Doc-Edit 模組範圍 |
-| D3 | **標準本體**範圍（規格/測試/品質，是否含治理/合規）| Standards 模組 |
-| D4 | **優先外掛**（KAC vs CodeGraph 先接）與介面（MCP？）| 微服務邊界 |
-| D5 | **可交付清單**（企業交付的授權元件表）| §2 落地 |
+| ~~D2~~ | **✅ 定案（2026-10-17）：初期只 md**（參照 opencode-web 文件存取）；Doc-Edit 外掛先不實作 | 已消解 |
+| ~~D3~~ | **✅ 定案：標準本體屬外掛、第一階段先不實作**；核心不含 | 已消解 |
+| ~~D4~~ | **✅ 定案：外掛介面＝MCP / HTTPS；先不實作外掛**（[ADR-0006](docs/adr/ADR-0006-module-interface-mcp-https.md)）| 已消解 |
+| ~~D5~~ | **✅ 定案：以 `scripts/sbom.mjs` 產出元件授權表**（[licensing](docs/standards/governance/licensing.md) §6）| 已消解 |
 
 ---
 
@@ -211,5 +211,6 @@ pnpm -r build
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-17 | v0.3 | 決策原則定為「參照 opencode／opencode-web」；**D2–D5 全部定案**（§9）；新增 ADR-0005（模型注入，Accepted）、ADR-0006（外掛介面＝MCP/HTTPS，先不實作外掛）。 |
 | 2026-10-17 | v0.2 | 工作流由「規格拍板後才動工」改為**迭代螺旋**（§0；ADR-0002）；**D1 定案：Rust 核心＋React 前端**（§4/§9；ADR-0003）；§3 架構圖遷為 Mermaid（依文件標準 §6）。 |
 | 2026-10-17 | v0.1 | 初版：專案建立（Inception）。定四階段工作流、授權治理（§2）、三層+微服務架構、AI 開發紀律、文件標準入口、待決清單。改寫自 ASM `AGENTS.md` 模式，依 owx（文件優先、企業交付、clean-room omo）調整。 |

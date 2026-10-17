@@ -221,10 +221,11 @@ flowchart TB
 ## 8. 待決（迭代中就地決策並記 ADR）
 
 1. ~~自建 harness 的語言/邊界~~ → **✅ 已定案：Rust 核心 + React 前端**（[ADR-0003](../adr/ADR-0003-harness-rust-core-react-frontend.md)）。
-2. **文件格式**：初期只 md，還是要 docx/pdf？（影響 Doc-Edit 模組）→ D2
-3. **標準本體的範圍**：規格/測試/品質之外，是否納入治理/合規？→ D3
-4. **優先外掛**：KAC 與 CodeGraph 誰先接？以何介面（MCP？）？→ D4
-5. **可交付清單**：企業交付時，明確列出「MIT/自有」元件表（授權閘門）。→ D5
+2. ~~文件格式~~ → **✅ 初期只 md**（參照 opencode-web）；Doc-Edit 外掛先不實作。
+3. ~~標準本體範圍~~ → **✅ 屬外掛、第一階段先不實作**。
+4. ~~優先外掛與介面~~ → **✅ 介面＝MCP / HTTPS；先不實作外掛**（[ADR-0006](../adr/ADR-0006-module-interface-mcp-https.md)）。
+5. ~~可交付清單~~ → **✅ 以 `scripts/sbom.mjs` 產出元件授權表**。
+6. 模型注入路徑 → **✅**（[ADR-0005](../adr/ADR-0005-model-chain-injection-path.md)，Accepted）。
 
 ---
 

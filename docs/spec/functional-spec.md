@@ -757,10 +757,10 @@ stateDiagram-v2
 
 | # | 決策 | 影響 | 狀態 |
 |---|---|---|---|
-| D2 | **文件格式**範圍（初期只 md，或含 docx／pdf） | Doc-Edit 模組範圍 | 待決 |
-| D3 | **標準本體**範圍（規格／測試／品質，是否含治理／合規） | Standards 模組 | 待決 |
-| D4 | **優先外掛**（KAC vs CodeGraph 先接）與介面（MCP？） | 微服務邊界 | 待決 |
-| D5 | **可交付清單**（企業交付的授權元件表） | §7 落地 | 待決 |
+| D2 | **文件格式**：初期只 md（參照 opencode-web） | Doc-Edit 模組 | ✅ 定案 |
+| D3 | **標準本體**：屬外掛、先不實作 | Standards 模組 | ✅ 定案 |
+| D4 | **外掛介面＝MCP / HTTPS**；先不實作外掛（[ADR-0006](../adr/ADR-0006-module-interface-mcp-https.md)）| 微服務邊界 | ✅ 定案 |
+| D5 | **可交付清單**：以 `scripts/sbom.mjs` 產出（licensing §6）| §7 落地 | ✅ 定案 |
 
 ### 8.2 本規格未完備處
 

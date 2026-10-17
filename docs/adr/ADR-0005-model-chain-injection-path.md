@@ -1,8 +1,9 @@
 # ADR-0005：模型鏈／fallback 的注入路徑
 
-- **Status**：Proposed（待 Daniel 拍板）
+- **Status**：Accepted（2026-10-17）
 - **Date**：2026-10-17
 - **Deciders**：Daniel（專案負責人）
+- **決策原則**：一律**參照 opencode／opencode-web** 的既有做法，不另創。
 
 ## Context
 
@@ -17,16 +18,16 @@ step② 的 live 驗證（[`../design/interfaces.md`](../design/interfaces.md) �
 | (c) provider hook | `Hooks.provider` 註冊自訂 model | 需自建 provider 包裝，較重 |
 | (d) `chat.params` | 只改溫度／token 等 | **不含 model（不可用）** |
 
-## Decision（提議）
+## Decision
 
-採 **(a) ＋ (b) 混合**：
+**參照 opencode／opencode-web 的既有做法**，採 **(a) ＋ (b)**：
 
-- **選鏈（proactive）**：harness 依 category／agent 解析模型鏈，並以 **(a) agent 設定**落實（harness 管理 agent 定義）；主 session 模型由 agent 決定。
-- **委派模型的指定**：harness 以 **(b) server API／SDK** 生成子 session 時帶入解析後的模型。
-- **reactive 復原**：因無法於同一輪換模型，harness 於觀察到失敗（`event`／`tool.execute.after`）後，以**新的請求／子 session** 改用具 fallback 模型重試。
-- **(c) provider hook** 保留為未來統一入口（可註冊虛擬 model）之評估項。
+- **選鏈（proactive）**：harness 依 category／agent 解析模型鏈，以 **agent 設定**落實。此與 **opencode**（agent 以 `model` 指定）與 **opencode-web**（profile 的 `opencode.json` 寫 `model`）一致。
+- **委派模型的指定**：harness 以 **server API／SDK** 生成子 session 時帶入模型（opencode 支援 per-session 指定）。
+- **reactive 復原**：沿用 opencode 語意，不於同一輪換模型；harness 於失敗後以**換模型重發**（新請求／子 session）。
+- 不採 (c) provider hook（非 opencode-web 既有做法）。
 
-> 待決：上述之具體 wire（agent 設定格式、SDK 呼叫、失敗判定來源）需以 spike 驗證後定稿。
+> 實作之具體 wire（agent 設定格式、SDK 呼叫）以**遵循 opencode／opencode-web 現行介面**為準；如遇差異以 substrate 文件為依歸。
 
 ## Consequences
 
@@ -36,10 +37,10 @@ step② 的 live 驗證（[`../design/interfaces.md`](../design/interfaces.md) �
 
 ## Alternatives
 
-| 方案 | 為何不採（或未定） |
+| 方案 | 為何不採 |
 |---|---|
 | 純 (d) `chat.params` | output 無 model，不可行（已 live 驗證）|
-| 純 (c) provider hook | 可行但重；且需維護 provider 包裝 |
+| 純 (c) provider hook | 非 opencode／opencode-web 既有做法（違決策原則）|
 | 完全依賴 opencode 內建 provider fallback | 僅同 model ID 的 provider fallback，非跨模型鏈 |
 
 ## Refs
