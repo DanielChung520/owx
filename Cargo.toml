@@ -1,0 +1,29 @@
+# owx Rust harness workspace（walking skeleton）
+# crate 佈局見 docs/design/harness-architecture.md；邊界決策見 docs/adr/ADR-0004。
+# 依賴授權：皆為 MIT / Apache-2.0（可交付，見 docs/standards/governance/licensing.md §1）。
+[workspace]
+resolver = "2"
+members = [
+    "crates/owx-core",
+    "crates/owx-boundary",
+    "crates/owx-harnessd",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "LicenseRef-Proprietary"
+publish = false
+rust-version = "1.75"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
+axum = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1"
+
+[profile.release]
+lto = "thin"

@@ -166,7 +166,9 @@ owx/
 │   ├── spec/                 # 需求規格（clean-room 回溯）
 │   ├── design/               # 技術設計（模組/介面/資料/前端/測試）
 │   └── adr/                  # 架構決策記錄
-└── (待建) src/ · crates/ · packages/ · apps/
+├── crates/                   # Rust harness（owx-core / owx-boundary / owx-harnessd）
+├── packages/                 # TypeScript（opencode-plugin-owx shim）
+└── apps/web/                 # React 前端（Vite）
 ```
 > 規則：子目錄複雜度達門檻才增設子 `AGENTS.md`，子檔不得重複本檔內容。
 
@@ -174,17 +176,22 @@ owx/
 
 ## 8. 指令
 
-> ⚠️ 尚無程式碼，多數指令**待建**（見 §9）。
-
 ```bash
 # 文件/規範
 git status
 
-# (待建) Rust
-# cargo fmt --check && cargo clippy -- -D warnings && cargo test
-# (待建) 前端
-# pnpm install && pnpm typecheck
+# Rust harness（crates/）
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace
+
+# 前端 / shim（pnpm workspace）
+pnpm install
+pnpm -r typecheck
+pnpm -r build
 ```
+
+> ⚠️ 目前僅 **step② walking skeleton**（`owx-core`/`owx-boundary`/`owx-harnessd`、`opencode-plugin-owx`、`apps/web`）；功能與 CI 待後續迭代（見 §9）。
 
 ---
 
