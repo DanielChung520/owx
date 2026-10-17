@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Header } from "./components/Header";
 import { MessageInput } from "./components/MessageInput";
 import { MessageList } from "./components/MessageList";
+import { Sidebar } from "./components/Sidebar";
 import { createSession, hasApi, sendMessage } from "./lib/api";
 import { useSessionStream } from "./lib/useSessionStream";
 
@@ -31,14 +32,17 @@ export function App(): JSX.Element {
 
   return (
     <div className="app">
-      <Header status={status} />
-      {error !== null ? (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <MessageList messages={messages} />
-      <MessageInput disabled={status !== "live"} onSend={handleSend} />
+      <Sidebar activeSession={sessionId} />
+      <div className="main">
+        <Header status={status} />
+        {error !== null ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <MessageList messages={messages} />
+        <MessageInput disabled={status !== "live"} onSend={handleSend} />
+      </div>
     </div>
   );
 }
