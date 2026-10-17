@@ -7,13 +7,29 @@ const LABELS: Record<ConnStatus, string> = {
   closed: "未連線",
 };
 
-export function Header({ status }: { status: ConnStatus }): JSX.Element {
+export function Header({
+  status,
+  title,
+  context,
+}: {
+  status: ConnStatus;
+  title?: string;
+  context?: string;
+}): JSX.Element {
   return (
     <header className="header">
-      <span className="brand">owx</span>
-      <span className={`status status-${status}`} aria-live="polite">
-        {LABELS[status]}
-      </span>
+      <div className="header-left">
+        <span className="brand">owx</span>
+        {title !== undefined ? <span className="title">{title}</span> : null}
+      </div>
+      <div className="header-right">
+        {context !== undefined ? (
+          <span className="context">{context}</span>
+        ) : null}
+        <span className={`status status-${status}`} aria-live="polite">
+          {LABELS[status]}
+        </span>
+      </div>
     </header>
   );
 }

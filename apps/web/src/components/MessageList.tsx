@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "../lib/types";
 
 export function MessageList({
@@ -18,7 +19,13 @@ export function MessageList({
         {messages.map((m) => (
           <li key={m.id} className={`msg msg-${m.role}`}>
             <span className="role">{m.role}</span>
-            <p>{m.text}</p>
+            {m.role === "assistant" ? (
+              <div className="md">
+                <ReactMarkdown>{m.text}</ReactMarkdown>
+              </div>
+            ) : (
+              <p>{m.text}</p>
+            )}
           </li>
         ))}
       </ul>

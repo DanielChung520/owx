@@ -65,6 +65,13 @@ export function App(): JSX.Element {
     })();
   };
 
+  const active = sessions.find((session) => session.id === activeId) ?? null;
+  const modelLabel =
+    active?.model !== undefined
+      ? [active.model.providerID, active.model.id].filter(Boolean).join("/")
+      : "";
+  const context = [active?.agent, modelLabel].filter(Boolean).join(" · ");
+
   return (
     <div className="app">
       <Sidebar
@@ -73,7 +80,11 @@ export function App(): JSX.Element {
         onSelect={selectSession}
       />
       <div className="main">
-        <Header status={state.status} />
+        <Header
+          status={state.status}
+          title={active?.title}
+          context={context === "" ? undefined : context}
+        />
         {error !== null ? (
           <p className="error" role="alert">
             {error}

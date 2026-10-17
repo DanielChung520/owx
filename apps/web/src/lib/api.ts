@@ -5,6 +5,8 @@ const baseUrl = import.meta.env.VITE_OPENCODE_URL ?? "";
 export interface SessionSummary {
   id: string;
   title?: string;
+  agent?: string;
+  model?: { id?: string; providerID?: string };
 }
 
 export interface MessagePart {
