@@ -1,44 +1,86 @@
-import { useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { Header } from "./components/Header";
 import { MessageInput } from "./components/MessageInput";
 import { MessageList } from "./components/MessageList";
 import { Sidebar } from "./components/Sidebar";
-import { createSession, sendMessage } from "./lib/api";
+import {
+  createSession,
+  listMessages,
+  listSessions,
+  sendMessage,
+  toChatMessages,
+  type SessionSummary,
+} from "./lib/api";
+import { chatReducer, initialChatState } from "./lib/chat";
 import { useSessionStream } from "./lib/useSessionStream";
 
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function App(): JSX.Element {
-  const { messages, status } = useSessionStream();
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(chatReducer, initialChatState);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useSessionStream(activeId, dispatch);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        setSessions(await listSessions());
+      } catch (cause) {
+        setError(describe(cause));
+      }
+    })();
+  }, []);
+
+  const selectSession = (id: string): void => {
+    setActiveId(id);
+    void (async () => {
+      try {
+        const envelopes = await listMessages(id);
+        dispatch({ type: "hydrate", messages: toChatMessages(envelopes) });
+      } catch (cause) {
+        setError(describe(cause));
+      }
+    })();
+  };
 
   const handleSend = (text: string): void => {
     void (async () => {
       try {
-        let id = sessionId;
+        let id = activeId;
         if (id === null) {
           id = await createSession();
-          setSessionId(id);
+          setActiveId(id);
+          setSessions(await listSessions());
         }
         await sendMessage(id, text);
         setError(null);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : String(cause));
+        setError(describe(cause));
       }
     })();
   };
 
   return (
     <div className="app">
-      <Sidebar activeSession={sessionId} />
+      <Sidebar
+        sessions={sessions}
+        activeId={activeId}
+        onSelect={selectSession}
+      />
       <div className="main">
-        <Header status={status} />
+        <Header status={state.status} />
         {error !== null ? (
           <p className="error" role="alert">
             {error}
           </p>
         ) : null}
-        <MessageList messages={messages} />
-        <MessageInput disabled={status !== "live"} onSend={handleSend} />
+        <MessageList messages={state.messages} />
+        <MessageInput disabled={state.status !== "live"} onSend={handleSend} />
       </div>
     </div>
   );

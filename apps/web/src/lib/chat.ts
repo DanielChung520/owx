@@ -11,6 +11,7 @@ export type ChatAction =
   | { type: "connection"; status: ConnStatus }
   | { type: "message"; message: ChatMessage }
   | { type: "patch"; id: string; role?: Role; text?: string }
+  | { type: "hydrate"; messages: ChatMessage[] }
   | { type: "clear" };
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
@@ -53,6 +54,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
       return { ...state, messages };
     }
+    case "hydrate":
+      return { ...state, messages: action.messages };
     case "clear":
       return { ...state, messages: [] };
     default:

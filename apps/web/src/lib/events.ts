@@ -13,7 +13,23 @@ function asRole(value: unknown): Role | undefined {
     : undefined;
 }
 
-export function mapEvent(raw: unknown): ChatAction | null {
+function matchesSession(
+  eventSessionID: unknown,
+  active: string | null | undefined,
+): boolean {
+  if (!active) {
+    return true;
+  }
+  if (typeof eventSessionID !== "string") {
+    return true;
+  }
+  return eventSessionID === active;
+}
+
+export function mapEvent(
+  raw: unknown,
+  sessionId?: string | null,
+): ChatAction | null {
   const envelope = asRecord(raw);
   if (envelope === null) {
     return null;
@@ -29,6 +45,9 @@ export function mapEvent(raw: unknown): ChatAction | null {
     const info = asRecord(properties.info);
     const id = info?.id;
     if (typeof id !== "string") {
+      return null;
+    }
+    if (!matchesSession(info?.sessionID, sessionId)) {
       return null;
     }
     const action: ChatAction = { type: "patch", id };
@@ -47,6 +66,9 @@ export function mapEvent(raw: unknown): ChatAction | null {
     const id = part.messageID;
     const text = part.text;
     if (typeof id !== "string" || typeof text !== "string") {
+      return null;
+    }
+    if (!matchesSession(part.sessionID, sessionId)) {
       return null;
     }
     return { type: "patch", id, text };

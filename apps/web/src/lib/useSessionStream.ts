@@ -1,16 +1,14 @@
-import { useEffect, useReducer } from "react";
-import { chatReducer, initialChatState } from "./chat";
+import { useEffect } from "react";
+import type { Dispatch } from "react";
+import type { ChatAction } from "./chat";
 import { mapEvent } from "./events";
-import type { ChatMessage, ConnStatus } from "./types";
 
 const baseUrl = import.meta.env.VITE_OPENCODE_URL ?? "";
 
-export function useSessionStream(): {
-  messages: ChatMessage[];
-  status: ConnStatus;
-} {
-  const [state, dispatch] = useReducer(chatReducer, initialChatState);
-
+export function useSessionStream(
+  sessionId: string | null,
+  dispatch: Dispatch<ChatAction>,
+): void {
   useEffect(() => {
     const source = new EventSource(`${baseUrl}/global/event`);
     source.onopen = () => dispatch({ type: "connection", status: "live" });
@@ -23,7 +21,7 @@ export function useSessionStream(): {
       } catch {
         return;
       }
-      const action = mapEvent(raw);
+      const action = mapEvent(raw, sessionId);
       if (action !== null) {
         dispatch(action);
       }
@@ -32,7 +30,5 @@ export function useSessionStream(): {
       source.close();
       dispatch({ type: "connection", status: "closed" });
     };
-  }, []);
-
-  return { messages: state.messages, status: state.status };
+  }, [sessionId, dispatch]);
 }
