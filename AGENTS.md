@@ -191,7 +191,7 @@ pnpm -r typecheck
 pnpm -r build
 ```
 
-> ⚠️ 目前僅 **step② walking skeleton**（`owx-core`/`owx-boundary`/`owx-harnessd`、`opencode-plugin-owx`、`apps/web`）；功能與 CI 待後續迭代（見 §9）。
+> 目前為 **step② 完成**：9 個 Rust crate（`owx-*`）、`opencode-plugin-owx` shim、`apps/web`、閘門（clean-room/license/doc-link/SBOM）與 CI 已建；決策全數定案（見 §9）。
 
 ---
 
@@ -207,10 +207,27 @@ pnpm -r build
 
 ---
 
-## 10. 變更紀錄
+## 10. 對外存取（Cloudflare Tunnel）
+
+> owx 的對外入口由 **Cloudflare Tunnel** 提供（與載體 `opencode-web` 共用同一 tunnel）。
+
+| 公開主機名 | 目標（本機）| 用途 |
+|---|---|---|
+| `owx.aiconn.ai` | `http://127.0.0.1:13100` | owx harness sidecar（`/health`、`/rpc/*`、`/mcp`）|
+
+- **port**：owx sidecar 綁 loopback `127.0.0.1:13100`（env `OWX_HARNESS_PORT`，預設 13100；見 §8）。
+- **tunnel 類型**：**remote-managed**（`cloudflared tunnel run --token`，systemd `cloudflared.service`）；**ingress（公開主機名 → 服務）在 Cloudflare Zero Trust dashboard 設定**，本機無 `config.yml`。
+- **設定步驟（dashboard）**：Zero Trust → Networks → Tunnels → 選該 tunnel → **Public Hostname** → Add：Subdomain `owx`、Domain `aiconn.ai`、Service `HTTP` → `127.0.0.1:13100`；儲存即生效（DNS CNAME 由 Cloudflare 自動建立）。
+- ❗ **憑證**：tunnel token 為機密，**嚴禁寫入版控或文件**（本節只記主機名與埠對映）。
+- ⚠️ **安全**：sidecar 端點**未內建驗證**，其中 `/rpc/delegate/run` 會建立 opencode session（觸發 agent 執行）。對外暴露前**必加存取控制**（Cloudflare Access 或載體 proxy 的鎖定/密碼）；正式對外入口建議走載體（`opencode-web`：內外網分離＋鎖定＋Basic，見 base-core FR-I-1）。
+
+---
+
+## 11. 變更紀錄
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-17 | v0.4 | 新增 §10「對外存取（Cloudflare Tunnel）」：`owx.aiconn.ai → 127.0.0.1:13100`，remote-managed tunnel 之 dashboard 設定步驟與安全警示；§8 現況更新為 step② 完成。 |
 | 2026-10-17 | v0.3 | 決策原則定為「參照 opencode／opencode-web」；**D2–D5 全部定案**（§9）；新增 ADR-0005（模型注入，Accepted）、ADR-0006（外掛介面＝MCP/HTTPS，先不實作外掛）。 |
 | 2026-10-17 | v0.2 | 工作流由「規格拍板後才動工」改為**迭代螺旋**（§0；ADR-0002）；**D1 定案：Rust 核心＋React 前端**（§4/§9；ADR-0003）；§3 架構圖遷為 Mermaid（依文件標準 §6）。 |
 | 2026-10-17 | v0.1 | 初版：專案建立（Inception）。定四階段工作流、授權治理（§2）、三層+微服務架構、AI 開發紀律、文件標準入口、待決清單。改寫自 ASM `AGENTS.md` 模式，依 owx（文件優先、企業交付、clean-room omo）調整。 |
