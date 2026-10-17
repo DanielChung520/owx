@@ -141,6 +141,17 @@ body {
   color: var(--fg-muted);
 }
 
+.picker {
+  background: var(--bg-deep);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 13px;
+  max-width: 220px;
+}
+
 .md {
   line-height: 1.6;
 }

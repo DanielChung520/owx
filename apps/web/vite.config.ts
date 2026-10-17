@@ -22,6 +22,7 @@ export default defineConfig({
       "/permission": { target: OPENCODE_URL, changeOrigin: true },
       "/path": { target: OPENCODE_URL, changeOrigin: true },
       "/tui": { target: OPENCODE_URL, changeOrigin: true },
+      "/api": { target: OPENCODE_URL, changeOrigin: true },
     },
   },
   preview: { port: FRONTEND_PORT },

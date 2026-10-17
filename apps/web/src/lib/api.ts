@@ -67,6 +67,81 @@ export function toChatMessages(envelopes: MessageEnvelope[]): ChatMessage[] {
   });
 }
 
+export interface ProviderModel {
+  providerID: string;
+  id: string;
+}
+
+export interface ProviderGroup {
+  id: string;
+  name?: string;
+  models: ProviderModel[];
+}
+
+export interface AgentInfo {
+  name: string;
+  mode?: string;
+}
+
+export async function listAgents(): Promise<AgentInfo[]> {
+  const res = await fetch(`${baseUrl}/agent`);
+  if (!res.ok) {
+    throw new Error(`listAgents failed: ${res.status}`);
+  }
+  return (await res.json()) as AgentInfo[];
+}
+
+export async function listProviders(): Promise<ProviderGroup[]> {
+  const res = await fetch(`${baseUrl}/config/providers`);
+  if (!res.ok) {
+    throw new Error(`listProviders failed: ${res.status}`);
+  }
+  const data = (await res.json()) as {
+    providers?: Array<{
+      id: string;
+      name?: string;
+      models?: Record<string, unknown>;
+    }>;
+  };
+  return (data.providers ?? []).map((provider) => ({
+    id: provider.id,
+    name: provider.name,
+    models: Object.keys(provider.models ?? {}).map((id) => ({
+      providerID: provider.id,
+      id,
+    })),
+  }));
+}
+
+export async function setSessionAgent(
+  sessionId: string,
+  agent: string,
+): Promise<void> {
+  const res = await fetch(`${baseUrl}/api/session/${sessionId}/agent`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ agent }),
+  });
+  if (!res.ok) {
+    throw new Error(`setSessionAgent failed: ${res.status}`);
+  }
+}
+
+export async function setSessionModel(
+  sessionId: string,
+  providerID: string,
+  id: string,
+): Promise<void> {
+  const res = await fetch(`${baseUrl}/api/session/${sessionId}/model`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ model: { providerID, id } }),
+  });
+  if (!res.ok) {
+    throw new Error(`setSessionModel failed: ${res.status}`);
+  }
+}
+
 export async function createSession(): Promise<string> {
   const res = await fetch(`${baseUrl}/session`, {
     method: "POST",
