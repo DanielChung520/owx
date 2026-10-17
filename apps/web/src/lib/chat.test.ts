@@ -45,4 +45,26 @@ describe("chatReducer", () => {
     state = chatReducer(state, { type: "clear" });
     expect(state.messages).toHaveLength(0);
   });
+
+  it("creates a message on patch when absent", () => {
+    const state = chatReducer(initialChatState, {
+      type: "patch",
+      id: "a",
+      role: "assistant",
+    });
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]?.role).toBe("assistant");
+    expect(state.messages[0]?.text).toBe("");
+  });
+
+  it("patches text and preserves existing role", () => {
+    let state = chatReducer(initialChatState, {
+      type: "patch",
+      id: "a",
+      role: "assistant",
+    });
+    state = chatReducer(state, { type: "patch", id: "a", text: "hello" });
+    expect(state.messages[0]?.role).toBe("assistant");
+    expect(state.messages[0]?.text).toBe("hello");
+  });
 });
