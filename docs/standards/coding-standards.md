@@ -203,7 +203,7 @@ owx 是 AI agent 大量產出程式碼的專案：
 
 ## 12. 授權潔淨 coding 規則（owx 特有）
 
-- **禁止**任何檔案出現 omo（oh-my-openagent）之原始碼、prompt、skill 文字或其品牌名（OmO / ultrawork / Sisyphus / Hashline…）。
+- **禁止**任何檔案出現 omo（oh-my-openagent）之原始碼、prompt、skill 文字或其**任何品牌名**（禁止字串清單以編碼保存於 `scripts/cleanroom-scan.mjs`）。
 - 新增依賴須在 PR body 標明授權；**SUL/SSPL/BUSL 一律不得進交付物**。
 - clean-room 產出（自建 harness）不得暗示衍生自 omo 之表達；僅可依「功能需求」實作。
 

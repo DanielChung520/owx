@@ -48,7 +48,7 @@ owx 的 harness 是 **clean-room** 自建，omo 僅作**需求來源**。
 
 ### 3.2 禁止 ❌
 - ❌ 複製 omo 的**原始碼**、**prompt**、**skill 文字**、**文件內容**。
-- ❌ 沿用其**品牌名**（OmO / `ultrawork` / `mass ulw` / Sisyphus / Hashline / Kibitzer…）。
+- ❌ 沿用其**任何品牌名**（禁止字串清單以編碼保存於 `scripts/cleanroom-scan.mjs`，避免字串本身散落文件）。
 - ❌ 在 owx 檔案中出現任何 omo 的表達片段。
 
 ### 3.3 最安全姿勢

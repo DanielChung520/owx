@@ -6,7 +6,12 @@
  * hook 契約見 docs/design/interfaces.md §2。
  *
  * 行為原則：**fail-open**。sidecar 不可達或逾時時，一律放行，不阻擋 agent。
+ *
+ * 本檔的 hook 形狀已對 `@opencode-ai/plugin`（opencode 1.18.x）的 `Hooks` 型別
+ * 做編譯期驗證（回傳型別 `Promise<Hooks>`）。
  */
+
+import type { Hooks, Plugin, PluginInput } from "@opencode-ai/plugin";
 
 const DEFAULT_PORT = 13100;
 const DEFAULT_TIMEOUT_MS = 250;
@@ -45,24 +50,52 @@ async function callSidecar(
   }
 }
 
-/**
- * opencode plugin 進入點。
- *
- * hook 形狀依 opencode plugin API（`{ "tool.execute.before": async (input, output) => {} }`）。
- * 骨架階段僅掛 `tool.execute.before`；其餘 hook（chat.params / permission.ask / event）
- * 待後續迭代補上。實際 API 形狀若與此略有出入，見 README 的「已知不確定」。
- */
-export const OwxPlugin = async (_context: unknown) => ({
-  "tool.execute.before": async (
-    input: unknown,
-    _output: unknown,
-  ): Promise<void> => {
-    const decision = await callSidecar("tool.execute.before", input);
-    if (decision?.decision === "block") {
-      throw new Error(`owx: blocked by harness: ${decision.reason}`);
-    }
-    // allow / rewrite（骨架階段忽略改寫）/ null（fail-open）皆放行。
-  },
-});
+export const OwxPlugin: Plugin = async (
+  _input: PluginInput,
+): Promise<Hooks> => {
+  return {
+    "tool.execute.before": async (input, output) => {
+      const decision = await callSidecar("tool.execute.before", {
+        tool: input.tool,
+        sessionID: input.sessionID,
+        callID: input.callID,
+        args: output.args,
+      });
+      if (decision?.decision === "block") {
+        // output 無 block 欄位，阻擋須 throw。
+        throw new Error(`owx: blocked by harness: ${decision.reason}`);
+      }
+      if (decision?.decision === "rewrite") {
+        output.args = decision.payload;
+      }
+    },
+
+    "permission.ask": async (input, output) => {
+      const decision = await callSidecar("permission.ask", input);
+      if (decision?.decision === "block") {
+        output.status = "deny";
+      }
+    },
+
+    "chat.message": async (input) => {
+      await callSidecar("chat.message", {
+        sessionID: input.sessionID,
+        agent: input.agent,
+      });
+    },
+
+    // chat.params output 無 model 欄位：模型鏈/fallback 不經此 hook（見 interfaces.md §7）。
+    "chat.params": async (input) => {
+      await callSidecar("chat.params", {
+        sessionID: input.sessionID,
+        agent: input.agent,
+      });
+    },
+
+    event: async ({ event }) => {
+      await callSidecar("event", event);
+    },
+  };
+};
 
 export default OwxPlugin;

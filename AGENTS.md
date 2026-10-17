@@ -59,7 +59,7 @@ flowchart LR
 | **omo（oh-my-openagent）** | **SUL-1.0**（source-available，非 OSI）| ❌ **不得進交付物**；僅可**黑箱回溯需求**，自建 |
 
 **紅線**：
-- ❌ 複製 omo 的**原始碼、prompt、skill 文字、文件**；❌ 沿用其品牌名（OmO / ultrawork / Sisyphus / Hashline…）。
+- ❌ 複製 omo 的**原始碼、prompt、skill 文字、文件**；❌ 沿用其**任何品牌名**（禁止字串清單以編碼保存於 `scripts/cleanroom-scan.mjs`）。
 - ✅ 讀其**公開文件/可觀察行為** → 抽**功能需求** → 自己寫。
 - 任何新增依賴（npm/cargo）須在 PR body 標明**授權**並確認可交付。
 - 詳細流程見 [`docs/standards/governance/licensing.md`](docs/standards/governance/licensing.md)。

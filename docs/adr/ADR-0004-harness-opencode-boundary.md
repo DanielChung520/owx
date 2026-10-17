@@ -53,6 +53,7 @@ Crate 分解（依賴單向、無環）：`owx-core`（型別／特徵，無 I/O
 
 **風險與緩解**
 - hook 覆蓋不足／API 漂移 → 以 walking skeleton 先驗證 hook；pin 版本；漂移隔離於 `owx-boundary`。
+- **模型注入路徑缺口**（1.18.x 已驗證）：`chat.params` 的 output 不含 model → 模型鏈／fallback（FR-HAR-12/13）須改由 agent 設定／SDK 設定 session model／provider hook 達成；列為待決。
 - sidecar 故障耦合 → 非關鍵 hook **fail-open**，安全關鍵（permission）**fail-closed**；逾時＋健康檢查。
 - 與 opencode 既有 agent／session／task **雙重編排** → opencode 擁有訊息／session 儲存；harness 只存**政策與 boulder 狀態**，以 session id 為鍵。
 - 與 opencode provider fallback 重疊 → harness router 擁有鏈選擇，經 `chat.params` 下傳解析後 model。

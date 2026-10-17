@@ -599,6 +599,31 @@ pub struct ErrorPayload {
 - **核心無關 substrate**：`owx-core` 的 trait 與型別不引用任何 opencode 專屬符號；opencode 改動只影響 `owx-boundary`（[`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)）。
 - **契約測試**：以 contract 層測試鎖定三條邊界的形狀（[`coding-standards.md`](../standards/coding-standards.md) §4.2）。
 
+### 7.4 已驗證：opencode plugin hook 表面（1.18.x）
+
+> 驗證方式：對照 `@opencode-ai/plugin`（1.18.x）之 `Hooks` 型別定義與既有真實外掛；shim 已對 `Hooks` 做**編譯期驗證**（`tsc` 通過）。live 執行驗證待後續。
+
+與本專案相關的 hook：
+
+| hook | input → output | owx 用途 |
+|---|---|---|
+| `tool.execute.before` | `{tool, sessionID, callID}` → `{args}` | 意圖閘門、工具攔截；**可改寫 `args`**；**阻擋須 throw**（output 無 block 欄位）|
+| `tool.execute.after` | `{tool, sessionID, callID, args}` → `{title, output, metadata}` | 結果觀察／後處理 |
+| `permission.ask` | `Permission` → `{status}` | 權限政策 |
+| `chat.message` | `{sessionID, agent, model?, …}` → `{message, parts}` | 訊息觀察 |
+| `chat.params` | `{sessionID, agent, model, provider, message}` → `{temperature, topP, topK, maxOutputTokens, options}` | LLM 參數；**output 無 model** |
+| `event` | `{event}` | 事件觀察（續作／idle）|
+| `experimental.chat.system.transform` | `{sessionID?, model}` → `{system}` | system prompt 注入（紀律）|
+| `experimental.session.compacting` | `{sessionID}` → `{context, prompt?}` | 壓縮自訂 |
+| `tool.definition` | `{toolID}` → `{description, parameters}` | 工具定義調整 |
+
+**結論**：
+1. shim 假設正確：hook 為 `{ "<name>": async (input, output) => {} }`；plugin 進入點為 `async (PluginInput) => Hooks`。
+2. `tool.execute.before` 可改寫 `args`、但無 block 欄位 → 阻擋以 **throw** 實作。
+3. ⚠️ **模型鏈／fallback（FR-HAR-12/13）不經 `chat.params`**（output 無 model 欄位）→ 注入路徑須改由 agent 設定／SDK 設定 session model／provider hook 達成（**待決**）。
+
+**待決（新增）**：FR-HAR-12/13 模型注入路徑；`tool.execute.before` throw 的正式行為需 live 驗證。
+
 ---
 
 ## 8. 依據 ID

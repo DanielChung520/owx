@@ -17,7 +17,7 @@ owx 的目標是重做一個「文件優先」的 agent 執行環境，形狀類
 
 - **substrate 採用 opencode（MIT）**，以包裝/外掛方式使用，**不改其原始碼**（「包裝不擴充」）。
 - **omo 僅作需求來源**：以 **clean-room**（黑箱回溯公開文件與行為）抽取功能需求，寫入 owx 規格；**harness 由 owx 原創自建**。
-- **禁止**複製 omo 之原始碼、prompt、skill 文字、文件或品牌名（OmO / ultrawork / Sisyphus / Hashline…）。
+- **禁止**複製 omo 之原始碼、prompt、skill 文字、文件或**任何品牌名**（清單見 `scripts/cleanroom-scan.mjs`）。
 - 達成機制：`AGENTS.md` §2 + [`docs/standards/governance/licensing.md`](../standards/governance/licensing.md)（PR 閘門）。
 
 ## Consequences

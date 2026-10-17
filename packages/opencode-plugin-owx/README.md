@@ -31,9 +31,16 @@ pnpm --filter @owx/opencode-plugin-owx run build
 - 依賴授權：`typescript`（MIT）、`@types/node`（MIT）。
 - 執行期不需第三方依賴（使用全域 `fetch`）。
 
-## 已知不確定（待迭代以真實 opencode 驗證）
+## 已驗證與待決
 
-1. **plugin 進入點與 hook 簽章**：目前依公開文件形狀實作；實際 `tool.execute.before` 的
-   `input`/`output` 型別與「阻擋」的正式機制（throw 或專用回傳）需以真實 opencode 執行驗證。
-2. 其餘 hook（`chat.params`、`permission.ask`、`event`）尚未掛載。
+已驗證（對 `@opencode-ai/plugin` 1.18.x 型別，`tsc` 通過）：
+
+1. plugin 進入點為 `async (PluginInput) => Hooks`；hook 為 `{ "<name>": async (input, output) => {} }`。
+2. `tool.execute.before` 的 output 只有 `{args}`（可改寫）；**阻擋須 throw**。
+3. 已掛載 `tool.execute.before`、`permission.ask`、`chat.message`、`chat.params`、`event`。
+
+待決：
+
+1. **模型鏈／fallback 不經 `chat.params`**（output 無 model 欄位）→ 注入路徑另議。
+2. `tool.execute.before` 阻擋（throw）的正式行為需 live 執行驗證。
 3. 傳輸：目前用 loopback HTTP；是否改用 MCP/stdio 待 `docs/design/interfaces.md` §7 收斂。
