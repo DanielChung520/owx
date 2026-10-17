@@ -8,6 +8,9 @@ members = [
     "crates/owx-config",
     "crates/owx-tools",
     "crates/owx-discipline",
+    "crates/owx-session",
+    "crates/owx-router",
+    "crates/owx-orchestrator",
     "crates/owx-boundary",
     "crates/owx-harnessd",
 ]

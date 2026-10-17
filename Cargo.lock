@@ -345,6 +345,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "owx-orchestrator"
+version = "0.0.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "owx-router"
+version = "0.0.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "owx-session"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "owx-tools"
 version = "0.0.0"
 dependencies = [
