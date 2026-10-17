@@ -3,7 +3,7 @@ import { Header } from "./components/Header";
 import { MessageInput } from "./components/MessageInput";
 import { MessageList } from "./components/MessageList";
 import { Sidebar } from "./components/Sidebar";
-import { createSession, hasApi, sendMessage } from "./lib/api";
+import { createSession, sendMessage } from "./lib/api";
 import { useSessionStream } from "./lib/useSessionStream";
 
 export function App(): JSX.Element {
@@ -12,9 +12,6 @@ export function App(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const handleSend = (text: string): void => {
-    if (!hasApi()) {
-      return;
-    }
     void (async () => {
       try {
         let id = sessionId;

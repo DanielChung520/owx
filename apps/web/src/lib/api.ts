@@ -1,9 +1,5 @@
 const baseUrl = import.meta.env.VITE_OPENCODE_URL ?? "";
 
-export function hasApi(): boolean {
-  return baseUrl !== "";
-}
-
 export async function createSession(): Promise<string> {
   const res = await fetch(`${baseUrl}/session`, {
     method: "POST",

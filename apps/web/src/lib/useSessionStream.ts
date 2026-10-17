@@ -12,10 +12,6 @@ export function useSessionStream(): {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
 
   useEffect(() => {
-    if (baseUrl === "") {
-      dispatch({ type: "connection", status: "closed" });
-      return;
-    }
     const source = new EventSource(`${baseUrl}/global/event`);
     source.onopen = () => dispatch({ type: "connection", status: "live" });
     source.onerror = () =>
