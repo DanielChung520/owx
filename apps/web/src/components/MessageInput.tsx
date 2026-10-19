@@ -1,35 +1,131 @@
-import { useEffect, useState } from "react";
-import { findFiles, listCommands, type CommandInfo } from "../lib/api";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { findFiles, listCommands } from "../lib/api";
+import { BUILTIN_COMMANDS } from "../lib/builtin-commands";
+import {
+  availableFlat,
+  filterCommands,
+  invocationFor,
+  mergeCommands,
+  toServerPalette,
+  type PaletteCommand,
+} from "../lib/commands";
+import { CommandPalette } from "./CommandPalette";
 
 export function MessageInput({
   disabled,
   onSend,
+  onCommand,
 }: {
   disabled: boolean;
   onSend: (text: string) => void;
+  onCommand: (command: PaletteCommand) => void;
 }): JSX.Element {
   const [value, setValue] = useState("");
-  const [commands, setCommands] = useState<CommandInfo[]>([]);
+  const [serverCommands, setServerCommands] = useState<PaletteCommand[]>([]);
   const [files, setFiles] = useState<string[]>([]);
+  const [dismissed, setDismissed] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // 抓取 opencode server 指令：連線（live）後才抓；`disabled` 由 false→true 亦會重抓。
   useEffect(() => {
+    if (disabled) {
+      return;
+    }
+    let cancelled = false;
     void (async () => {
       try {
-        setCommands(await listCommands());
+        const list = await listCommands();
+        if (!cancelled) {
+          setServerCommands(toServerPalette(list));
+        }
       } catch {
-        setCommands([]);
+        if (!cancelled) {
+          setServerCommands([]);
+        }
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [disabled]);
+
+  const allCommands = useMemo(
+    () => mergeCommands(BUILTIN_COMMANDS, serverCommands),
+    [serverCommands],
+  );
 
   const commandQuery =
     value.startsWith("/") && !value.includes(" ") ? value.slice(1) : null;
-  const commandMatches =
-    commandQuery === null
-      ? []
-      : commands
-          .filter((command) => command.name.startsWith(commandQuery))
-          .slice(0, 8);
+
+  const matches = useMemo(
+    () =>
+      commandQuery === null || dismissed
+        ? []
+        : filterCommands(allCommands, commandQuery),
+    [commandQuery, dismissed, allCommands],
+  );
+
+  const flat = useMemo(() => availableFlat(matches), [matches]);
+
+  useEffect(() => {
+    setDismissed(false);
+  }, [commandQuery]);
+
+  useEffect(() => {
+    setActiveId((current) => {
+      if (current !== null && flat.some((command) => command.id === current)) {
+        return current;
+      }
+      return flat[0]?.id ?? null;
+    });
+  }, [flat]);
+
+  const select = (command: PaletteCommand): void => {
+    if (!command.available) {
+      return;
+    }
+    const invocation = invocationFor(command);
+    if (invocation.type === "insert") {
+      setValue(invocation.text);
+    } else {
+      setValue("");
+      setDismissed(true);
+      onCommand(command);
+    }
+    textareaRef.current?.focus();
+  };
+
+  const move = (delta: number): void => {
+    if (flat.length === 0) {
+      return;
+    }
+    const index = flat.findIndex((command) => command.id === activeId);
+    const next = (index + delta + flat.length) % flat.length;
+    setActiveId(flat[next]?.id ?? null);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (matches.length === 0) {
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      move(1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      move(-1);
+    } else if (event.key === "Enter" && !event.shiftKey) {
+      const active = flat.find((command) => command.id === activeId) ?? flat[0];
+      if (active !== undefined) {
+        event.preventDefault();
+        select(active);
+      }
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setDismissed(true);
+    }
+  };
 
   const atMatch = /(?:^|\s)@([^\s]*)$/.exec(value);
   const atQuery = atMatch === null ? null : (atMatch[1] ?? "");
@@ -59,18 +155,12 @@ export function MessageInput({
 
   return (
     <div className="composer-wrap">
-      {commandMatches.length > 0 ? (
-        <ul className="suggest">
-          {commandMatches.map((command) => (
-            <li key={command.name}>
-              <button type="button" onClick={() => setValue(`/${command.name} `)}>
-                /{command.name}
-                <span className="dim">{command.description}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <CommandPalette
+        commands={matches}
+        activeId={activeId}
+        onSelect={select}
+        onHover={setActiveId}
+      />
       {atQuery !== null && files.length > 0 ? (
         <ul className="suggest">
           {files.map((file) => (
@@ -101,11 +191,15 @@ export function MessageInput({
         </label>
         <textarea
           id="prompt"
+          ref={textareaRef}
           rows={2}
           value={value}
           disabled={disabled}
           placeholder={disabled ? "未連線" : "輸入訊息…（/ 指令、@ 檔案）"}
           onChange={(event) => setValue(event.target.value)}
+          onKeyDown={onKeyDown}
+          aria-controls={matches.length > 0 ? "command-listbox" : undefined}
+          aria-activedescendant={activeId !== null ? `cmd-${activeId}` : undefined}
         />
         <button type="submit" disabled={disabled || value.trim() === ""}>
           送出

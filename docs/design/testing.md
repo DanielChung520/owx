@@ -1,6 +1,6 @@
 # owx 測試設計（testing.md）
 
-> 版本：v0.1　|　日期：2026-10-17　|　狀態：Draft
+> 版本：v1.1　|　日期：2026-10-19　|　狀態：Draft
 > 來源：整合自 [`AGENTS.md`](../../AGENTS.md) §5、[`coding-standards.md`](../standards/coding-standards.md) §4、[`licensing.md`](../standards/governance/licensing.md)、[`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0002`](../adr/ADR-0002-iterative-spiral-workflow.md)、[`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)，以及載體 repo `opencode-web` 既有測試（`cli/ow.test.mjs`、`proxy/ow-proxy.test.mjs`、`mcp-server/src/tools.test.ts`）之可觀察風格與隔離手法。
 
 ---
@@ -161,6 +161,16 @@ owx 的測試風格與隔離手法，**沿用載體 repo `opencode-web` 既有�
 > **ID 慣例**：
 > - base-core FR-A 至 FR-I 用 `TC-A-1` 至 `TC-I-12`（依群序）。
 > - 沿用 [`functional-spec.md`](../spec/functional-spec.md) 既有 `TC-CARRIER-1..16`、`TC-SUB-1..6`、`TC-HAR-1..15`、`TC-NFR-1..13`。
+> - FR-H-11 跨三層（unit／component／contract），以 `TC-H-11a`／`TC-H-11b`／`TC-H-11c` 表示。
+> - FR-H-12／13／14 同樣跨層，以子 ID 表示：FR-H-12 用 `TC-H-12a`（unit）／`TC-H-12b`（component）／`TC-H-12c`（contract）；FR-H-13 用 `TC-H-13a`（unit）／`TC-H-13b`（component）；FR-H-14 用 `TC-H-14a`（component）／`TC-H-14b`（contract）。
+> - FR-H-15 跨層，以子 ID 表示：`TC-H-15a`（unit，寬度 clamp／約束）／`TC-H-15b`（component，收合／開啟切換與 resizer 拖曳）。
+> - FR-H-16／17（專案生命週期）以子 ID 表示：FR-H-16 用 `TC-H-16a`（component，入口頁／專案控制）／`TC-H-16b`（contract，`GET /project`）；FR-H-17 用 `TC-H-17a`（unit，slug 驗證與建立 handler）／`TC-H-17b`（component，NewProjectModal）／`TC-H-17c`（contract，`POST /rpc/project/create`）。
+> - FR-H-18／19（檔案樹節點操作）以子 ID 表示：FR-H-18 用 `TC-H-18a`（unit，路徑邊界與 mkdir／write handler）／`TC-H-18b`（component，NodeMenu）／`TC-H-18c`（contract，`/rpc/fs/*`）；FR-H-19 用 `TC-H-19a`（unit，格式偵測與打包／解封裝 handler）／`TC-H-19b`（component，NodeMenu 打包／解封裝）／`TC-H-19c`（contract，`/rpc/archive/*`）。
+> - FR-H-20～22（文件生命週期，規劃）以子 ID 表示：FR-H-20 用 `TC-H-20a`（unit，匯入 handler／非 md 唯讀）／`TC-H-20b`（component，NodeMenu 匯入）／`TC-H-20c`（contract，`/rpc/import/*`，含 `501`）；FR-H-21 用 `TC-H-21a`（unit，轉換 handler）／`TC-H-21b`（component，NodeMenu 轉換）／`TC-H-21c`（contract，`/rpc/convert`）；FR-H-22 用 `TC-H-22a`（component，NodeMenu 匯出／分享）／`TC-H-22b`（contract，`/rpc/export/*`、`/rpc/share`，含 `501`）。
+> - FR-H-14 增 `TC-H-14c`（component，多格式預覽＋Mermaid）；FR-H-23 用 `TC-H-23a`（component，僅 md 可編輯／非 md 唯讀）／`TC-H-23b`（contract，儲存經 `/rpc/fs/write`）。
+> - FR-H-24（圖示／變更色）用 `TC-H-24a`（component，型別圖示＋顏色、變更色）／`TC-H-24b`（contract，`GET /rpc/git/status`）。
+> - FR-H-25（多分頁）用 `TC-H-25a`（component，多分頁開啟／切換／關閉＋分頁選單）／`TC-H-25b`（contract，`POST /rpc/git/commit`）。
+> - FR-H-26（活動列／Settings 選單）用 `TC-H-26a`（component，ActivityBar 切換＋Settings 浮動選單與快捷鍵）／`TC-H-26b`（contract，技能 `GET /api/skill`＋檢查版本 `GET /app`）。
 >
 > **層級欄**：unit／integration／contract／e2e／property。
 >
@@ -177,13 +187,13 @@ owx 的測試風格與隔離手法，**沿用載體 repo `opencode-web` 既有�
 | FR-E（模型與 Provider） | 13 | `TC-E-1` 至 `TC-E-13` | 13 |
 | FR-F（設定與隔離） | 14 | `TC-F-1` 至 `TC-F-14` | 14 |
 | FR-G（擴充機制） | 11 | `TC-G-1` 至 `TC-G-11` | 11 |
-| FR-H（UI） | 10 | `TC-H-1` 至 `TC-H-10` | 10 |
+| FR-H（UI） | 26 | `TC-H-1` 至 `TC-H-26`（FR-H-11 a／b／c；FR-H-12 a／b／c；FR-H-13 a／b；FR-H-14 a／b／c；FR-H-15 a／b；FR-H-16 a／b；FR-H-17 a／b／c；FR-H-18 a／b／c；FR-H-19 a／b／c；FR-H-20 a／b／c；FR-H-21 a／b／c；FR-H-22 a／b；FR-H-23 a／b；FR-H-24 a／b；FR-H-25 a／b；FR-H-26 a／b） | 50 |
 | FR-I（部署與多租戶） | 12 | `TC-I-1` 至 `TC-I-12` | 12 |
 | FR-CARRIER（載體層） | 16 | `TC-CARRIER-1` 至 `TC-CARRIER-16` | 16 |
 | FR-SUB（Substrate 點名） | 6 | `TC-SUB-1` 至 `TC-SUB-6` | 6 |
 | FR-HAR（Harness 自建） | 15 | `TC-HAR-1` 至 `TC-HAR-15` | 15 |
 | NFR（非功能） | 13 | `TC-NFR-1` 至 `TC-NFR-13` | 13 |
-| **合計** | **157** | | **157** |
+| **合計** | **173** | | **197** |
 
 ### 3.2 FR-A｜Agent 執行與編排
 
@@ -319,6 +329,46 @@ owx 的測試風格與隔離手法，**沿用載體 repo `opencode-web` 既有�
 | FR-H-8 | TC-H-8 | unit | 主題與鍵綁 |
 | FR-H-9 | TC-H-9 | integration | TUI attention 桌面通知／音效 |
 | FR-H-10 | TC-H-10 | contract | `/tui` 控制 API |
+| FR-H-11 | TC-H-11a | unit | 指令註冊表合併 server 指令與內建鏡射，並依可用性／來源過濾正確 |
+| FR-H-11 | TC-H-11b | component | CommandPalette 渲染、鍵盤導覽、選取後觸發對應動作 |
+| FR-H-11 | TC-H-11c | contract | 每個 server-backed 內建指令對應正確 opencode 端點（方法／路徑） |
+| FR-H-12 | TC-H-12a | unit | 檔案樹 helper：延遲載入目錄、entries 映射 `{name,path,absolute,type,ignored}` |
+| FR-H-12 | TC-H-12b | component | FileExplorer 渲染專案切換器與延遲載入目錄樹，載入／錯誤／空狀態正確 |
+| FR-H-12 | TC-H-12c | contract | `GET /project` 與 `GET /file?path=&directory=` 契約（entries 形狀） |
+| FR-H-13 | TC-H-13a | unit | markdown 大綱 parser：抽取 H1–H6 標題與層級 |
+| FR-H-13 | TC-H-13b | component | DocumentOutline 渲染標題，點擊捲動預覽至對應錨點 |
+| FR-H-14 | TC-H-14a | component | DocumentPreview 渲染 markdown、標題錨點與 doc-status 徽章 |
+| FR-H-14 | TC-H-14b | contract | `GET /file/content` 契約（文件內容讀取） |
+| FR-H-15 | TC-H-15a | unit | 區域寬度 clamp：側面板 160–480px、Chat 300–760px，越界夾至邊界；DocumentPreview 彈性填充 |
+| FR-H-15 | TC-H-15b | component | 三區收合／開啟切換（ActivityBar 圖示、對側區標頭切換鈕）與 resizer 拖曳調寬 |
+| FR-H-16 | TC-H-16a | component | ProjectHome 渲染專案卡片並可開啟；ProjectMenu 開啟／新增／關閉切換全頁入口 |
+| FR-H-16 | TC-H-16b | contract | `GET /project` 契約（清單形狀：worktree／vcs） |
+| FR-H-17 | TC-H-17a | unit | slug 驗證（`^[a-z0-9][a-z0-9-]*$`）與建立 handler（建目錄＋`.owx-project.json`；重複 409／非法 400） |
+| FR-H-17 | TC-H-17b | component | NewProjectModal 表單（名稱／英文名／標籤）；建立後開啟專案並執行 `/init` |
+| FR-H-17 | TC-H-17c | contract | `POST /rpc/project/create` 契約（請求／回應／400 invalid_slug／409 already_exists） |
+| FR-H-18 | TC-H-18a | unit | 路徑邊界（`outside_worktree`／`invalid_path`）與 mkdir／write handler（建資料夾／寫檔；重複 409） |
+| FR-H-18 | TC-H-18b | component | NodeMenu：建立資料夾／文檔、複製相對／絕對路徑 |
+| FR-H-18 | TC-H-18c | contract | `POST /rpc/fs/mkdir`／`/rpc/fs/write` 契約 |
+| FR-H-19 | TC-H-19a | unit | 壓縮格式偵測與打包／解封裝 handler（`zip`／`tar.gz`／`tar`） |
+| FR-H-19 | TC-H-19b | component | NodeMenu：打包（格式選擇）／解封裝（僅壓縮檔） |
+| FR-H-19 | TC-H-19c | contract | `POST /rpc/archive/create`／`/rpc/archive/extract` 契約 |
+| FR-H-20 | TC-H-20a | unit | 匯入 handler（base64→檔；非 md 唯讀）與路徑邊界 |
+| FR-H-20 | TC-H-20b | component | NodeMenu：匯入檔案；非 md 顯示唯讀 |
+| FR-H-20 | TC-H-20c | contract | `/rpc/import/file`、`/rpc/import/notion`（`501 not_configured`） |
+| FR-H-21 | TC-H-21a | unit | 轉換 handler（`md→pdf`；`pdf→md` 回 `415`） |
+| FR-H-21 | TC-H-21b | component | NodeMenu：轉換格式 |
+| FR-H-21 | TC-H-21c | contract | `POST /rpc/convert` 契約 |
+| FR-H-22 | TC-H-22a | component | NodeMenu：匯出／分享 |
+| FR-H-22 | TC-H-22b | contract | `/rpc/export/filer`、`/rpc/export/notion`、`/rpc/share`（含 `501`） |
+| FR-H-14 | TC-H-14c | component | 多格式預覽（PDF／Word／CSV／Excel／圖片）＋ markdown 之 Mermaid 渲染 |
+| FR-H-23 | TC-H-23a | component | 僅 `md` 可編輯；非 `md` 唯讀 |
+| FR-H-23 | TC-H-23b | contract | 儲存經 `POST /rpc/fs/write`（`overwrite`） |
+| FR-H-24 | TC-H-24a | component | Explorer 節點顯示型別圖示＋顏色；變更檔以文字顏色區隔 |
+| FR-H-24 | TC-H-24b | contract | `GET /rpc/git/status` 契約（`{ path, status }`） |
+| FR-H-25 | TC-H-25a | component | 文件多分頁（開啟／切換／單頁關閉）＋分頁選單（關閉全部／搜尋） |
+| FR-H-25 | TC-H-25b | contract | `POST /rpc/git/commit` 契約（`committed`／`nothing_to_commit`） |
+| FR-H-26 | TC-H-26a | component | ActivityBar 切換（Explorer／Outline／Knowledge Graph）＋ Settings 浮動選單與快捷鍵 |
+| FR-H-26 | TC-H-26b | contract | 技能 `GET /api/skill`、檢查版本 `GET /app`（其餘佔位） |
 
 ### 3.10 FR-I｜部署與多租戶
 
@@ -555,7 +605,7 @@ flowchart TB
 ### 8.1 元件測試（component）
 
 - **工具**：React Testing Library（候選，MIT）。
-- **範圍**：聊天視窗元件、訊息列表、權限對話框、檔案選擇器。
+- **範圍**：聊天視窗元件、訊息列表、權限對話框、檔案選擇器、指令面板（CommandPalette）、專案檔案總管（FileExplorer）、文件大綱（DocumentOutline）、文件預覽（DocumentPreview，含多格式＋Mermaid）、版面區域收合／調寬（Resizer 與區切換控制）、專案入口頁（ProjectHome）／專案控制（ProjectMenu）／新增專案（NewProjectModal）、檔案樹節點操作（NodeMenu）、文件編輯器（僅 md）。
 - **門檻**：UI component 覆蓋率 **60%**（[`coding-standards.md`](../standards/coding-standards.md) §4.3）。
 - **斷言**：元件單一職責；業務邏輯抽 hook／service；渲染使用者內容一律 sanitize。
 
@@ -629,6 +679,9 @@ flowchart LR
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-19 | v1.1 | 新增 FR-H-26 之 TC 對映（`TC-H-26a/b`）；§3 增子 ID 慣例說明；§3.1 群組摘要 FR-H 更新為 26 FR／50 TC、合計 173 FR／197 TC。 |
+| 2026-10-19 | v0.3 | 新增 FR-H-12／13／14 之 TC 對映（`TC-H-12a/b/c`、`TC-H-13a/b`、`TC-H-14a/b`）；§3 增子 ID 慣例說明；§3.1 群組摘要 FR-H 更新為 14 FR／20 TC、合計 161 FR／167 TC；§8.1 元件測試範圍補 FileExplorer／DocumentOutline／DocumentPreview。 |
+| 2026-10-18 | v0.2 | 新增 FR-H-11 之 TC 對映（`TC-H-11a` unit／`TC-H-11b` component／`TC-H-11c` contract）；§3.1 群組摘要 FR-H 更新為 11 FR／13 TC、合計 158 FR／160 TC；§8.1 元件測試範圍補指令面板。 |
 | 2026-10-17 | v0.1 | 初版：定義測試定位與關聯（§0）、四層 + property 橫切策略（§1）、工具鏈與授權標註（§2）、`FR-*`／`NFR-*` 至 `TC-*` 完整對映（§3，157 條）、覆蓋率門檻（§4）、TDD 工作流（§5）、clean-room 與授權邊界測試（§6）、MCP／介面契約測試（§7）、UI 測試（§8）、CI 佈線（§9）、缺口與待決（§10）。所有 `TC-*` 為設計佔位，尚未實作。 |
 
 ---

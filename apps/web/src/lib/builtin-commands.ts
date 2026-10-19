@@ -1,0 +1,278 @@
+/**
+ * opencode TUI 內建指令之**鏡射目錄**（owx 自有常數、版本釘選）。
+ *
+ * 背景：opencode 的 TUI 內建指令（`/models`、`/connect`、`/new` …）只存在於 TUI client 層，
+ * **不經任何 HTTP API** 暴露（`GET /command` 只回 server 指令）。owx 前端要達成指令面完整
+ * 對齊，必須自帶此鏡射表。僅鏡射 opencode 之指令**名稱與 metadata**（opencode 為 MIT）。
+ *
+ * 升級 opencode 時須人工比對並更新本表（見 docs/design/frontend.md §11）。
+ */
+
+import type { PaletteCommand } from "./commands";
+
+const TERMINAL_ONLY = "terminal／console 專屬，瀏覽器不適用";
+
+export const BUILTIN_COMMANDS: readonly PaletteCommand[] = [
+  // App
+  {
+    id: "sessions",
+    title: "Switch session",
+    description: "Open the session list",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "new",
+    title: "New session",
+    description: "Start a new session",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "workspaces",
+    title: "List workspaces",
+    description: "Switch between workspaces",
+    category: "app",
+    kind: "builtin",
+    available: false,
+    reason: TERMINAL_ONLY,
+  },
+  {
+    id: "models",
+    title: "Switch model",
+    description: "Select the model to use",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "agents",
+    title: "Switch agent",
+    description: "Select the agent to use",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "mcps",
+    title: "List MCP servers",
+    description: "Show configured MCP servers",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "variants",
+    title: "Switch model variant",
+    description: "Select a model variant",
+    category: "app",
+    kind: "builtin",
+    available: false,
+    reason: "model variants 為 TUI 專屬，瀏覽器不適用",
+  },
+  {
+    id: "connect",
+    title: "Connect a provider",
+    description: "Show provider authentication methods",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "org",
+    title: "Switch organization",
+    description: "Switch the active organization",
+    category: "app",
+    kind: "builtin",
+    available: false,
+    reason: TERMINAL_ONLY,
+  },
+  {
+    id: "status",
+    title: "Show status",
+    description: "Show app and config status",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "debug",
+    title: "Show debug info",
+    description: "Show version and environment info",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "themes",
+    title: "Switch theme",
+    description: "Toggle light / dark theme",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "help",
+    title: "Show help",
+    description: "List available commands",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "exit",
+    title: "Exit",
+    description: "Close the current session view",
+    category: "app",
+    kind: "builtin",
+    available: true,
+  },
+
+  // Session
+  {
+    id: "share",
+    title: "Share session",
+    description: "Create a shareable link for this session",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "rename",
+    title: "Rename session",
+    description: "Change the session title",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "timeline",
+    title: "Jump to message",
+    description: "Focus the message timeline",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "fork",
+    title: "Fork session",
+    description: "Fork this session into a new one",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "compact",
+    title: "Compact session",
+    description: "Summarize the session to free context",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "unshare",
+    title: "Unshare session",
+    description: "Remove the shareable link",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "undo",
+    title: "Undo last message",
+    description: "Revert to before the last message",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "redo",
+    title: "Redo",
+    description: "Restore reverted messages",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "timestamps",
+    title: "Toggle timestamps",
+    description: "Show or hide message timestamps",
+    category: "session",
+    kind: "builtin",
+    available: false,
+    reason: "message metadata 尚未在 web 對映（時間戳記不可用）",
+  },
+  {
+    id: "thinking",
+    title: "Toggle thinking",
+    description: "Show or hide reasoning parts",
+    category: "session",
+    kind: "builtin",
+    available: false,
+    reason: "reasoning parts 尚未在 web 對映（thinking 不可用）",
+  },
+  {
+    id: "copy",
+    title: "Copy last message",
+    description: "Copy the last assistant message",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "export",
+    title: "Export session",
+    description: "Download the session as JSON",
+    category: "session",
+    kind: "builtin",
+    available: true,
+  },
+
+  // Prompt
+  {
+    id: "editor",
+    title: "Open editor",
+    description: "Focus the message composer",
+    category: "prompt",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "skills",
+    title: "List skills",
+    description: "Show available skills",
+    category: "prompt",
+    kind: "builtin",
+    available: true,
+  },
+  {
+    id: "warp",
+    title: "Set workspace",
+    description: "Switch the tmux workspace",
+    category: "prompt",
+    kind: "builtin",
+    available: false,
+    reason: TERMINAL_ONLY,
+  },
+  {
+    id: "move",
+    title: "Move session",
+    description: "Move the session to another workspace",
+    category: "prompt",
+    kind: "builtin",
+    available: false,
+    reason: "workspace 之間搬移 session 尚未支援",
+  },
+
+  // Plugin
+  {
+    id: "diff",
+    title: "View diff",
+    description: "Show the session diff",
+    category: "plugin",
+    kind: "builtin",
+    available: true,
+  },
+];

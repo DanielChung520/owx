@@ -1,7 +1,7 @@
 # owx L3 設計：前端（frontend.md）
 
-> 版本：v0.1　|　日期：2026-10-17　|　狀態：Draft
-> 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`document-standards.md`](../standards/document-standards.md)，以及載體 repo `opencode-web` 之規格（`README.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`）。
+> 版本：v1.9　|　日期：2026-10-19　|　狀態：Draft
+> 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)、[`document-standards.md`](../standards/document-standards.md)，以及載體 repo `opencode-web` 之規格（`README.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`）。
 
 ---
 
@@ -35,7 +35,7 @@
 | 元件 | 授權 | 在本檔的角色 | 處置 |
 |---|---|---|---|
 | **opencode** | **MIT** | Substrate；Web UI 與 server API 來源 | 可重用／改／散布；本檔連結指向，不重抄 |
-| **owx 自有程式** | **Proprietary** | React 前端（聊天視窗） | 自有；本檔完整定義 |
+| **owx 自有程式** | **Proprietary** | React 前端（文件優先 IDE） | 自有；本檔完整定義 |
 | **opencode-web（ow）** | **自有（Proprietary）** | 載體層來源；iframe 宿主與 proxy | 可自由改 |
 | **omo（oh-my-openagent）** | **SUL-1.0** | **需求來源，非程式碼來源** | 不進交付物；僅黑箱回溯 |
 
@@ -61,13 +61,13 @@
 
 ### 1.1 一句話定位
 
-> owx 前端是一個**標準聊天視窗**：以 React 實作，疊在 opencode server 之上，嵌入載體層（opencode-web）並可被 iframe 驅動。它**不是**內容網站、**不是**文章清單、**不是**文件瀏覽器；文件與知識是 agent 操作的對象，前端只負責把對話、狀態與權限呈現給使用者。
+> owx 前端是一個**文件優先 IDE（document-first IDE）**：以 React 實作，疊在 opencode server 之上，嵌入載體層（opencode-web）並可被 iframe 驅動。版面分**三區**：`[ActivityBar + 側面板] | DocumentPreview | Chat`——側面板由 ActivityBar 切換 **Explorer**（專案檔案樹）與 **Outline**（文件大綱），中央為**文件預覽**，右側為**對話**（session 清單移入 Chat 標頭）。三區各自**可收合／可開啟**，相鄰區之間以可拖曳 **resizer** 調寬（側面板 160–480px、Chat 300–760px，DocumentPreview 彈性填充；預設 280／400px），收合後以常駐控制復原（FR-H-15）。它**不是**內容網站、**不是**文章清單；文件與知識既是 agent 操作的對象，也是使用者直接瀏覽與預覽的對象（[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）。
 
 ### 1.2 IN / OUT
 
 | 面向 | 內容 |
 |---|---|
-| **IN** | 五個畫面（主聊天視窗／session 清單／文件選擇器／設定 profile／背景任務檢視）；元件樹；client 與 server 狀態模型；SSE 綁定與連線生命週期；iframe 嵌入契約；與載體層的端點介面與鎖定模式效應；載入／錯誤／空／權限狀態；無障礙（WCAG 2.1 AA） |
+| **IN** | 畫面／區塊（主聊天視窗、session 清單、**專案入口頁 ProjectHome**、新增專案、Explorer、Outline、**文件預覽（多分頁）**、文件選擇器、設定、背景任務、**文件編輯器（僅 md）**、**節點操作 NodeMenu**、**活動列與 Settings 浮動選單**）；三區版面；元件樹；client 與 server 狀態模型；SSE 綁定與連線生命週期；iframe 嵌入契約；與載體層的端點介面與鎖定模式效應；載入／錯誤／空／權限狀態；無障礙（WCAG 2.1 AA） |
 | **OUT** | 像素稿與視覺設計；HTTP 端點契約（`interfaces.md`）；Rust 核心模組分解（`harness-architecture.md`）；資料模型與狀態機（`data-and-state.md`）；載體層行為細節（carrier repo）；外掛模組（KAC／CodeGraph／Doc-Edit／Standards）的前端 |
 
 ### 1.3 前端在架構中的位置
@@ -76,7 +76,7 @@
 
 ```mermaid
 flowchart LR
-    U["使用者（瀏覽器）"] --> FE["React 前端<br/>聊天視窗"]
+    U["使用者（瀏覽器）"] --> FE["React 前端<br/>文件優先 IDE"]
     FE -->|"iframe / HTTP（相對路徑）"| P["載體層 ow-proxy<br/>對外 :4096"]
     P -->|"reverse proxy"| O["Substrate opencode<br/>內部 :13001"]
     O -->|"SSE /global/event"| P
@@ -92,64 +92,131 @@ flowchart LR
 
 > 每個畫面標明**目的**與**對應 FR ID**。畫面為邏輯單位，非像素稿；同一畫面可依視窗寬度重排（見 §9 無障礙與響應）。
 
+> **版面區域（三區）可收合／可調寬（FR-H-15）**：左側面板、DocumentPreview、Chat 三區各自**可收合與開啟**；相鄰區之間以可拖曳 **resizer** 調寬（側面板 160–480px、Chat 300–760px，DocumentPreview 彈性填充；預設 280／400px）。收合後以**常駐控制**復原：左側面板經 **ActivityBar** 圖示（點擊作用中圖示切換），DocumentPreview／Chat 經**對側區標頭**的切換鈕；ActivityBar（48px）恆常可見。此為版面層行為，不新增畫面。
+
 ### 2.1 主聊天視窗（main chat window）
 
-- **目的**：承載一次對話的完整生命週期。顯示訊息串流（text／tool／reasoning／file part）、輸入框、模型選擇、權限請求提示、abort 控制。
+- **目的**：承載一次對話的完整生命週期。顯示訊息串流（text／tool／reasoning／file part）、輸入框、權限請求提示、abort 控制；**標頭左側**為**連線狀態燈**（綠＝已連線／紅＝連線異常／灰＝未連接）與 session 選擇器（§2.2），**右側**為 agent／model 與文件切換鈕（**移除品牌「owx」與「已連線」狀態文字**）。
 - **核心行為**：送出 prompt（`prompt` 或 `prompt_async`）、串流渲染、工具呼叫可視化、權限 allow／deny、abort、context 壓縮提示。
-- **對應 FR**：FR-H-1（TUI 與 Web UI 共用同一 server）、FR-D-1（session CRUD／messages／parts／abort）、FR-D-2（SSE 即時推送）、FR-D-10（非同步訊息）、FR-SUB-1（SSE 為即時狀態來源）、FR-SUB-2（權限請求可觀察）、FR-HAR-6（意圖閘門提示）、FR-HAR-7（todo 顯示）。
+- **指令面板（CommandPalette）**：於 `Composer` 內以 `/` 觸發，列出**合併指令註冊表**（server 指令 + TUI 內建鏡射），支援過濾、鍵盤導覽與執行；不可用指令標示原因（FR-H-11）。
+- **對應 FR**：FR-H-1（TUI 與 Web UI 共用同一 server）、FR-D-1（session CRUD／messages／parts／abort）、FR-D-2（SSE 即時推送）、FR-D-10（非同步訊息）、FR-SUB-1（SSE 為即時狀態來源）、FR-SUB-2（權限請求可觀察）、FR-HAR-6（意圖閘門提示）、FR-HAR-7（todo 顯示）、FR-H-11（Web 指令面完整對齊 opencode）、FR-H-15（版面區域可收合／可調寬）。
 
 ### 2.2 session 清單／歷史（session list / history）
 
 - **目的**：列出 root session（時間降冪），支援開啟、切換、刪除、子 session 導覽。
+- **位置**：**移入 Chat 標頭**，以 `SessionMenu` 下拉呈現（**不再**置於側面板；側面板讓位給 Explorer／Outline，見 §3）。
 - **核心行為**：載入清單（`GET /session?directory=<worktree>&roots=true`）、開啟舊 session、刪除（`DELETE /session/:id`）、parent／child 切換。
 - **對應 FR**：FR-D-1（session CRUD）、FR-D-11（子 session 與 diff／stats）、FR-A-10（子 session 導覽）、FR-CARRIER-7（回應側改寫 session 頂層 `directory`）。
 
-### 2.3 檔案／文件選擇器（# 統一選擇器）
+### 2.3 專案檔案總管（Explorer）
+
+- **目的**：以**專案檔案樹**瀏覽當前專案，供使用者定位與開啟文件。
+- **核心行為**：**標頭顯示「專案名稱 `[目錄名]`」**（名稱取 `~/knowledge` 專案中繼資料，副檔名/slug 於方括號）＋ `ProjectMenu`；**延遲載入**的目錄樹（`GET /file?path=<dir>&directory=<root>`，entries 為 `{name,path,absolute,type,ignored}`）；展開／收合目錄、忽略項（`ignored`）標示；**每個節點顯示目錄／檔案類型圖示（帶顏色）**，**有變更的檔案以文字顏色區隔**（來源 **owx harness** `GET /rpc/git/status`）；預設／初始專案＝**當前作用中專案**，可設定，初始為 **owx**。
+- **對應 FR**：FR-H-12（專案檔案總管）、FR-CARRIER-7（`/project` 回應側改寫）。
+
+### 2.4 文件大綱（Outline）
+
+- **目的**：呈現**當前預覽文件**的 markdown 標題（H1–H6）大綱，供快速跳轉。
+- **核心行為**：於 **client 端**解析當前文件的 markdown 標題；點擊標題捲動文件預覽（§2.5）至對應錨點。
+- **對應 FR**：FR-H-13（文件大綱）。
+
+### 2.5 文件預覽（DocumentPreview）
+
+- **目的**：呈現當前文件的渲染結果，供閱讀與對照。
+- **核心行為**：**client 端**多格式渲染——**markdown**（`react-markdown`，含標題錨點供 §2.4 捲動、**Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**文件預覽為多分頁**（可同時開啟多檔、切換、單頁 `×` 關閉）；分頁列右側「⋯」浮動選單——**關閉全部文件／文件全部提交／搜尋**（FR-H-25）。**僅 `md` 可編輯**（§2.12 編輯器），其餘唯讀。
+- **對應 FR**：FR-H-14（文件預覽）、FR-CARRIER-10（文件狀態聚合）。
+
+### 2.6 檔案／文件選擇器（# 統一選擇器）
 
 - **目的**：以 `#` 觸發**單一**選擇器，範圍限 `.docs/**` 與根 `AGENTS.md`，每檔帶狀態徽章並依 🟠 → 🔵 → 🟡 → 🟢 排序；選取後插入帶狀態的結構化指示區塊（非 inline 全文）。
 - **核心行為**：符號後不可有空格、前方需為邊界、無匹配則不彈；狀態徽章來自 doc-status 聚合。
 - **對應 FR**：FR-CARRIER-11（統一檔案選擇器）、FR-CARRIER-10（文件狀態聚合）、FR-CARRIER-16（`remote-only` 唯讀引用）。
 
-### 2.4 設定／profile（settings / profile）
+### 2.7 設定／profile（settings / profile）
 
 - **目的**：顯示當前 profile 的隔離狀態（五根路徑）、模型選擇、主題（深淺）、權限設定檢視。
 - **核心行為**：讀取 profile 狀態、切換模型（寫入 state 根）、切換主題（`opencode_get_theme`／`set_theme`）、顯示 provider 可用性。
 - **對應 FR**：FR-CARRIER-1（五根隔離可觀察）、FR-CARRIER-4（路徑解析只讀 profile）、FR-E-4（per-agent／per-category 模型）、FR-H-8（主題與鍵綁）、FR-CARRIER-13（MCP `get_theme`／`set_theme`）。
 
-### 2.5 背景任務／sub-agent 檢視（background-task / sub-agent view）
+### 2.8 背景任務／sub-agent 檢視（background-task / sub-agent view）
 
 - **目的**：呈現背景委派（`run_in_background`）與 sub-agent 的執行狀態，支援取回結果與終端輸出檢視。
 - **核心行為**：列出背景任務（`task_id`、狀態、agent、category）、取回結果（`background_output`）、顯示終端輸出（xterm.js）、巢狀深度提示。
 - **對應 FR**：FR-HAR-1（委派 sync／background）、FR-HAR-2（category 與 skills）、FR-HAR-4（worker 不可再委派）、FR-A-8（巢狀深度控制）、FR-A-10（子 session 導覽）、FR-H-3（終端可視化）。
 
+### 2.9 專案入口頁（ProjectHome）
+
+- **目的**：在**未開啟專案**時作為入口，列出所有可開啟的文件專案。
+- **核心行為**：**本頁即 owx 首頁（預設進入）。全頁**（無側欄、無 chat）以卡片網格列出 **`~/knowledge` 下之文件專案**（由 **owx harness `GET /rpc/knowledge/list`** 提供）；**卡片顯示名稱與標籤（不顯示路徑）**、**等高＋陰影**；**專案若有未提交變更（`dirty`）則卡片左側顯示紅邊**；點卡片開啟；提供「+ 新增專案」入口（→ §2.10）。**文件專案的真實來源是 `~/knowledge`，非 opencode `GET /project`。** 由 Explorer 標頭的**專案控制選單**（`ProjectMenu`：開啟／新增／關閉）之「關閉專案」返回。
+- **對應 FR**：FR-H-16（專案入口頁與專案控制）、FR-H-17（新增專案）。
+
+### 2.10 新增專案（NewProjectModal）
+
+- **目的**：建立新的文件專案（於 `~/knowledge`）。
+- **核心行為**：modal 輸入**名稱**、**文件英文名**（作為資料夾／識別，`^[a-z0-9][a-z0-9-]*$`）、**標籤**（以「,」分隔）；系統生成**專案編號**與**建立時間**；送出後由 **owx harness** `POST /rpc/project/create` 建立（[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)），成功後開啟該專案並執行 opencode `/init`。
+- **對應 FR**：FR-H-17（新增專案）、FR-G-3（command `/init`）。
+
+### 2.11 檔案樹節點操作（NodeMenu）
+
+- **目的**：對 filetree 的**每個節點**（目錄／檔案）直接做檔案與文件生命週期操作，無須離開 IDE。
+- **核心行為**：於 filetree 的**每個節點**（目錄／檔案）**hover 後按右鍵（contextmenu）**顯示 `NodeMenu` →【**建立資料夾**／**建立文檔**（預設 `md`，可編輯）／**匯入檔案**（任何格式；非 `md` 唯讀）／**複製路徑（相對）**／**複製絕對路徑**／**匯出**／**轉換格式**／**打包**／**解封裝**／**分享**】。選單**分組**（**組間細線分隔**）：① **建立**（資料夾／文檔）② **匯入／匯出** ③ **打包／解封裝／轉換格式／分享** ④ **複製相對／絕對路徑**。**建立**以輸入框；**複製路徑**為純前端（clipboard，取節點 `path`／`absolute`）；**打包**以格式選擇（`zip` 預設／`tar.gz`／`tar`）；**解封裝**依副檔名偵測；**匯入／匯出／轉換／分享**經 owx harness（`/rpc/import/*`、`/rpc/export/*`、`/rpc/convert`、`/rpc/share`；Notion／filer 未設置時以 `501 not_configured` 呈現）。
+- **對應 FR**：FR-H-18（節點操作選單）、FR-H-20（匯入）、FR-H-21（轉換）、FR-H-22（匯出與分享）、FR-H-19（打包／解封裝）。
+
+### 2.12 文件編輯器（僅 `md`）
+
+- **目的**：編輯 markdown 文件（唯一可編輯的格式）。
+- **核心行為**：`md` 可進入編輯模式（原始／所見即所得），支援 **Mermaid**；**非 `md` 檔案唯讀**。儲存經 **owx harness** `POST /rpc/fs/write`（`overwrite`）。
+- **對應 FR**：FR-H-23（文件編輯）、FR-H-14（預覽）。
+
 ---
 
 ## 3. 元件樹
 
-下圖為前端元件樹，自 `App` 逐層展開至葉節點。畫面（§2）對應樹中的路由層；葉節點為可重用呈現元件。
+下圖為前端元件樹，自 `App` 逐層展開至葉節點。版面為**三區**：`[ActivityBar + 側面板] | DocumentPreview | Chat`（[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）。畫面（§2）對應樹中的路由層；葉節點為可重用呈現元件。
 
 ```mermaid
 flowchart TD
     App["App<br/>（Router + Providers）"] --> Providers["Providers<br/>QueryClient · ThemeProvider · SSEProvider"]
-    App --> Layout["AppLayout<br/>（側欄 + 主區）"]
+    App --> Layout["AppLayout<br/>（三區：側面板 | DocumentPreview | Chat）"]
+    App --> ProjectHome["ProjectHome<br/>（§2.9，全頁；未開啟專案）"]
+    App --> NewProjectModal["NewProjectModal<br/>（§2.10）"]
 
-    Layout --> Sidebar["Sidebar"]
-    Layout --> Main["MainArea"]
+    Layout --> ActivityBar["ActivityBar<br/>（Explorer／Outline／Knowledge Graph 切換；底部 Settings；48px 恆常可見）"]
+    Layout --> SidePanel["SidePanel<br/>（可收合，160–480px）"]
+    Layout --> ResizerLeft["Resizer<br/>（側面板 ↔ DocumentPreview）"]
+    Layout --> PreviewPane["DocumentPreview<br/>（§2.5，彈性填充）"]
+    Layout --> ResizerRight["Resizer<br/>（DocumentPreview ↔ Chat）"]
+    Layout --> ChatPane["ChatWindow<br/>（§2.1，可收合，300–760px）"]
 
-    Sidebar --> SessionList["SessionList<br/>（§2.2）"]
-    Sidebar --> ProfileBadge["ProfileBadge<br/>（§2.4）"]
-    Sidebar --> NewSessionBtn["NewSessionButton"]
+    ActivityBar --> ActivityIcon["ActivityIcon<br/>（Explorer／Outline／Knowledge Graph＋底部 Settings；點擊作用中圖示切換側面板）"]
+    ActivityBar --> SettingsMenu["SettingsMenu<br/>（浮動選單：參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]）"]
 
-    SessionList --> SessionRow["SessionRow"]
-    SessionRow --> SessionActions["SessionActions<br/>（開啟 / 刪除）"]
+    SidePanel --> FileExplorer["FileExplorer<br/>（§2.3）"]
+    SidePanel --> DocumentOutline["DocumentOutline<br/>（§2.4）"]
 
-    Main --> ChatWindow["ChatWindow<br/>（§2.1）"]
-    Main --> SettingsPanel["SettingsPanel<br/>（§2.4）"]
-    Main --> BackgroundPanel["BackgroundTaskPanel<br/>（§2.5）"]
+    FileExplorer --> ProjectMenu["ProjectMenu<br/>（開啟／新增／關閉專案）"]
+    FileExplorer --> FileTree["FileTree<br/>（延遲載入 GET /file）"]
+    FileTree --> FileTreeNode["FileTreeNode<br/>（name / type / ignored）"]
+    FileTreeNode --> NodeMenu["NodeMenu<br/>（§2.11：建立／複製／打包／解封裝）"]
 
-    ChatWindow --> MessageList["MessageList"]
-    ChatWindow --> Composer["Composer<br/>（輸入框）"]
-    ChatWindow --> PermissionPrompt["PermissionPrompt"]
+    DocumentOutline --> OutlineItem["OutlineItem<br/>（H1–H6）"]
+
+    PreviewPane --> MarkdownView["MarkdownView<br/>（react-markdown + 標題錨點）"]
+    PreviewPane --> DocStatusBadge["DocStatusBadge<br/>（🟠 🔵 🟡 🟢，FR-CARRIER-10）"]
+    PreviewPane --> PreviewHeader["PreviewHeader"]
+    PreviewHeader --> ChatToggle["ChatToggle<br/>（收合／開啟 Chat）"]
+
+    ChatPane --> ChatHeader["ChatHeader"]
+    ChatPane --> MessageList["MessageList"]
+    ChatPane --> Composer["Composer<br/>（輸入框）"]
+    ChatPane --> PermissionPrompt["PermissionPrompt"]
+    ChatPane --> SettingsPanel["SettingsPanel<br/>（§2.7）"]
+    ChatPane --> BackgroundPanel["BackgroundTaskPanel<br/>（§2.8）"]
+
+    ChatHeader --> SessionMenu["SessionMenu<br/>（§2.2，session 下拉）"]
+    ChatHeader --> ModelSelect["ModelSelect"]
+    ChatHeader --> StatusBadge["StatusBadge<br/>（agent / model / status）"]
+    ChatHeader --> PreviewToggle["PreviewToggle<br/>（收合／開啟 DocumentPreview）"]
 
     MessageList --> MessageItem["MessageItem"]
     MessageItem --> TextPart["TextPart<br/>（react-markdown）"]
@@ -159,11 +226,13 @@ flowchart TD
 
     ToolPart --> CodeBlock["CodeBlock<br/>（Shiki）"]
 
-    Composer --> DocPicker["DocumentPicker<br/>（§2.3，# 觸發）"]
-    Composer --> ModelSelect["ModelSelect"]
+    Composer --> DocPicker["DocumentPicker<br/>（§2.6，# 觸發）"]
+    Composer --> CommandPalette["CommandPalette<br/>（§2.1，/ 觸發）"]
     Composer --> AbortButton["AbortButton"]
 
-    DocPicker --> DocStatusBadge["DocStatusBadge<br/>（🟠 🔵 🟡 🟢）"]
+    DocPicker --> DocStatusBadge
+
+    CommandPalette --> CommandRow["CommandRow<br/>（名稱／描述／來源／可用性）"]
 
     BackgroundPanel --> TaskRow["TaskRow"]
     TaskRow --> TaskOutput["TaskOutput<br/>（xterm.js）"]
@@ -172,7 +241,7 @@ flowchart TD
     SettingsPanel --> IsolationView["IsolationView<br/>（五根路徑）"]
 ```
 
-圖說：`Providers` 注入 server state 快取（TanStack Query）、主題與 SSE 連線；`ChatWindow` 為預設路由；`DocumentPicker` 掛在 `Composer` 內，由 `#` 觸發；`BackgroundTaskPanel` 與 `SettingsPanel` 為可切換的主區檢視。
+圖說：`Providers` 注入 server state 快取（TanStack Query）、主題與 SSE 連線；`AppLayout` 為**三區**版面——`ActivityBar` 切換 `SidePanel` 於 `FileExplorer`（§2.3）與 `DocumentOutline`（§2.4）之間，中央為 `DocumentPreview`（§2.5），右側為 `ChatWindow`（§2.1）；session 清單以 `SessionMenu` 置於 `ChatHeader`（§2.2）；`DocumentPicker` 與 `CommandPalette` 皆掛在 `Composer` 內，分別由 `#` 與 `/` 觸發；`BackgroundTaskPanel` 與 `SettingsPanel` 為 Chat 區內可切換的檢視。三區各自可收合／可開啟（FR-H-15）：`ResizerLeft`／`ResizerRight` 為相鄰區之間的可拖曳調寬把手（側面板 160–480px、Chat 300–760px，`DocumentPreview` 彈性填充）；收合後以常駐控制復原——`ActivityIcon`（點擊作用中圖示切換 `SidePanel`）、`ChatHeader` 內的 `PreviewToggle`（開啟 `DocumentPreview`）與 `PreviewHeader` 內的 `ChatToggle`（開啟 `ChatWindow`）；`ActivityBar`（48px）恆常可見。
 
 ---
 
@@ -188,6 +257,8 @@ flowchart TD
 | **server state** | session 清單、message／part、權限請求、背景任務、doc-status、profile 狀態 | TanStack Query（快取）＋ SSE 增量 | 伺服器為權威、以事件流同步、需重試與失效策略 |
 
 原則：**server state 不複製進 client state**；client state 只存「使用者意圖」（選了哪個 session、打了什麼字），不存伺服器資料的副本。
+
+指令註冊表為**衍生資料**，不另存 client state：server 指令屬 server state（TanStack Query 快取 `GET /command`），內建鏡射為 owx 自有常數（模組常數，非 state）；兩者於渲染時合併（FR-H-11）。指令面板的**開合與過濾字串**屬 client state。
 
 ### 4.2 server state 經 SSE
 
@@ -331,10 +402,38 @@ const OW_URL =
 | `/session/:id` | DELETE | 刪除 session | FR-D-1 |
 | `/session/:id/message` | POST | 送出 prompt | FR-D-1、FR-D-10 |
 | `/session/:id/abort` | POST | 中止執行 | FR-D-1 |
-| `/project` | GET | 專案清單（`worktree` 由 proxy 改寫） | FR-CARRIER-7 |
-| `/project` | POST | 新增專案（鎖定模式回 403） | FR-CARRIER-5 |
+| `/session/:id/share` | POST | 建立分享連結 | FR-D-5 |
+| `/session/:id/share` | DELETE | 取消分享 | FR-D-5 |
+| `/session/:id` | PATCH | 重新命名 session | FR-D-1 |
+| `/session/:id/fork` | POST | 自某訊息 fork 新 session | FR-D-6 |
+| `/session/:id/summarize` | POST | 摘要（compact） | FR-D-3 |
+| `/session/:id/revert` | POST | 回復到某訊息狀態 | FR-D-7 |
+| `/session/:id/unrevert` | POST | 取消回復 | FR-D-7 |
+| `/session/:id/diff` | GET | session diff | FR-D-11 |
+| `/provider/auth` | GET | provider 認證狀態（`/connect`） | FR-E-1 |
+| `/config` | GET | 讀取設定（`/config`） | FR-F-1 |
+| `/app` | GET | app 資訊（`/help`、`/status`） | FR-H-1 |
+| `/file` | GET | 目錄列舉（`?path=<dir>&directory=<root>`；entries `{name,path,absolute,type,ignored}`） | FR-H-12 |
+| `/file/content` | GET | 讀取檔案內容（文件預覽） | FR-H-14 |
+| `/project` | GET | 專案清單（`worktree` 由 proxy 改寫） | FR-CARRIER-7、FR-H-12 |
+| `/rpc/project/create` | POST（harness） | **建立專案**（`~/knowledge/<slug>`；非 opencode） | FR-H-17 |
+| `/rpc/fs/mkdir` | POST（harness） | 建立資料夾（相對 `directory` 之下） | FR-H-18 |
+| `/rpc/fs/write` | POST（harness） | 建立／寫入文檔 | FR-H-18 |
+| `/rpc/archive/create` | POST（harness） | 打包（`zip`／`tar.gz`／`tar`） | FR-H-19 |
+| `/rpc/archive/extract` | POST（harness） | 解封裝（依副檔名偵測） | FR-H-19 |
+| `/rpc/import/file` | POST（harness） | 匯入本機檔案（任何格式；非 md 唯讀） | FR-H-20 |
+| `/rpc/import/notion` | POST（harness，規劃） | 自 Notion 匯入 | FR-H-20 |
+| `/rpc/convert` | POST（harness，規劃） | 格式轉換（`md→pdf`；`pdf→md` 待評估） | FR-H-21 |
+| `/rpc/export/filer` | POST（harness，規劃） | 匯出至 filer（回 URL） | FR-H-22 |
+| `/rpc/export/notion` | POST（harness，規劃） | 匯出至 Notion | FR-H-22 |
+| `/rpc/share` | POST（harness，規劃） | 產生分享連結 | FR-H-22 |
+| `/rpc/knowledge/list` | GET（harness） | 列出 `~/knowledge` 文件專案（入口頁來源） | FR-H-16 |
+| `/rpc/git/status` | GET（harness） | 檔案變更狀態（Explorer 變更色） | FR-H-24 |
+| `/rpc/git/commit` | POST（harness） | 提交全部變更（文件全部提交） | FR-H-25 |
 | `/__ow-doc-status` | GET | 文件狀態聚合（僅 `LOCKED` 掛載） | FR-CARRIER-10 |
 | `/__ow-inject.js` | GET | 注入腳本（繞 CSP inline 限制） | FR-CARRIER-9 |
+
+> **專案建立走 harness，非 opencode**：opencode 無「建立專案／目錄」API（`POST /project` 不存在——未匹配路由回 SPA catch-all；載體鎖定模式僅攔截）。專案建立由 **owx harness** 之 `POST /rpc/project/create` 負責（契約見 [`interfaces.md`](interfaces.md) §2.5、[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)）。
 
 ### 7.2 鎖定模式效應
 
@@ -355,12 +454,12 @@ const OW_URL =
 
 每個畫面須明確定義四類狀態，不得只做 happy path。
 
-| 狀態 | 主聊天視窗 | session 清單 | 文件選擇器 | 背景任務 |
-|---|---|---|---|---|
-| **載入** | 骨架訊息列 | 骨架列 | 載入中指示 | 骨架列 |
-| **錯誤** | 可讀錯誤 + 重試 | 可讀錯誤 + 重試 | 靜默不彈（無匹配） | 可讀錯誤 + 重試 |
-| **空** | 引導輸入提示 | 「尚無 session」 | 無匹配則不彈 | 「無背景任務」 |
-| **權限** | `PermissionPrompt`（阻塞） | 不適用 | 不適用 | 不適用 |
+| 狀態 | 主聊天視窗 | session 清單 | 專案檔案總管 | 文件大綱 | 文件預覽 | 文件選擇器 | 背景任務 | 指令面板 |
+|---|---|---|---|---|---|---|---|---|
+| **載入** | 骨架訊息列 | 骨架列 | 目錄樹骨架列 | 大綱骨架列 | 預覽骨架 | 載入中指示 | 骨架列 | 載入中指示（server 指令未回時先顯示內建鏡射） |
+| **錯誤** | 可讀錯誤 + 重試 | 可讀錯誤 + 重試 | 可讀錯誤 + 重試 | 可讀錯誤 + 重試 | 可讀錯誤 + 重試 | 靜默不彈（無匹配） | 可讀錯誤 + 重試 | 可讀錯誤 + 重試（server 指令失敗仍顯示內建鏡射） |
+| **空** | 引導輸入提示 | 「尚無 session」 | 「無檔案」 | 「無標題」 | 「未選擇文件」 | 無匹配則不彈 | 「無背景任務」 | 無匹配則不彈 |
+| **權限** | `PermissionPrompt`（阻塞） | 不適用 | 不適用 | 不適用 | 不適用 | 不適用 | 不適用 | 不適用 |
 
 補充規則：
 
@@ -408,9 +507,24 @@ const OW_URL =
 | 設計面向 | 依據 FR／ADR／NFR |
 |---|---|
 | 前端技術選型（React） | [`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md) |
+| 文件優先 IDE 版面（三區） | [`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md) |
 | 主聊天視窗 | FR-H-1、FR-D-1、FR-D-2、FR-D-10、FR-SUB-1、FR-SUB-2、FR-HAR-6、FR-HAR-7 |
+| 指令面板（CommandPalette） | FR-H-11、FR-D-5、FR-D-6、FR-D-7、FR-D-11、FR-E-1、FR-F-1 |
 | session 清單／歷史 | FR-D-1、FR-D-11、FR-A-10、FR-CARRIER-7 |
 | 文件選擇器 | FR-CARRIER-11、FR-CARRIER-10、FR-CARRIER-16 |
+| 專案檔案總管（Explorer） | FR-H-12、FR-CARRIER-7 |
+| 文件大綱（Outline） | FR-H-13 |
+| 文件預覽（DocumentPreview） | FR-H-14、FR-CARRIER-10 |
+| 版面區域收合／調寬 | FR-H-15 |
+| 專案入口頁與專案控制（ProjectHome／ProjectMenu） | FR-H-16、[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)（來源 `GET /rpc/knowledge/list`） |
+| 新增專案（NewProjectModal，harness 建立） | FR-H-17、FR-G-3、[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md) |
+| 檔案樹節點操作（NodeMenu） | FR-H-18、[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md) |
+| 文件打包／解封裝 | FR-H-19、[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md) |
+| 文件匯入／轉換／匯出／分享 | FR-H-20／21／22、[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md) |
+| 文件編輯（僅 md） | FR-H-23 |
+| 檔案樹圖示與變更色 | FR-H-24（`GET /rpc/git/status`） |
+| 文件多分頁與分頁選單 | FR-H-25（`POST /rpc/git/commit`） |
+| 活動列與 Settings 浮動選單 | FR-H-26 |
 | 設定／profile | FR-CARRIER-1、FR-CARRIER-4、FR-E-4、FR-H-8、FR-CARRIER-13 |
 | 背景任務／sub-agent | FR-HAR-1、FR-HAR-2、FR-HAR-4、FR-A-8、FR-A-10、FR-H-3 |
 | SSE 綁定 | FR-SUB-1、FR-D-2、FR-SUB-2 |
@@ -424,12 +538,25 @@ const OW_URL =
 
 ## 11. 缺口與待決
 
-1. **前端尚未有程式碼**：本檔為 clean-room 設計；實作與測試待迭代螺旋後續輪次產出（承接 [`functional-spec.md`](../spec/functional-spec.md) §8.2）。
+1. **前端尚未有程式碼**：本檔為 clean-room 設計；文件優先 IDE 版面（三區）已由 [`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md) 定案，實作與測試待迭代螺旋後續輪次產出（承接 [`functional-spec.md`](../spec/functional-spec.md) §8.2）。
 2. **postMessage 契約未收斂**：§6.2 的訊息型別為初稿，待與載體層（carrier repo）對齊後回寫。
 3. **`ow doc pull` 尚未實作**（FR-CARRIER-16）：`remote-only` 狀態目前只能唯讀引用，選擇器對應行為待實作後驗證。
 4. **Team Mode 前端未展開**：共享信箱／共享任務清單／per-member worktree（FR-A-6）待 D4 決策後補入。
 5. **opencode v2 差異**：事件類別與 session 結構以 v1 為準；v2 差異待迭代確認後回寫本檔。
 6. **響應式斷點未定**：畫面重排的斷點值待視覺設計輪次決定（本檔不含像素稿）。
+7. **內建指令目錄須手動同步 opencode 版本**：TUI 內建指令鏡射為 owx 自有常數（版本釘選），opencode 升版時須人工比對並更新；目前無自動偵測機制（FR-H-11）。
+8. **檔案樹延遲載入的快取與失效策略未定**：`GET /file` 的 lazy load 快取、展開狀態保存與失效時機待實作輪次細化（FR-H-12）。
+9. **大綱解析邊界未定**：重複標題、非標題 `#`（如程式碼區塊內）與錨點去重的處理待實作輪次細化（FR-H-13）。
+10. **文件預覽的 doc-status 來源待接**：預覽徽章重用 FR-CARRIER-10 語意，惟 `LOCKED` 以外情境的狀態來源待實作輪次確認（FR-H-14）。
+11. **版面區域的收合狀態與寬度持久化未定**：三區的收合狀態與 resizer 寬度是否跨 session 保存，以及與響應式斷點（§11.6）的互動，待實作輪次細化（FR-H-15）。
+12. **harness 管理 RPC 的暴露與授權未定**：`/rpc/project/create` 目前經前端（公開網域）可達；上線前須加 bearer／存取控制（見 [`interfaces.md`](interfaces.md) §2.5、`AGENTS.md` §10 go-live）（FR-H-17）。
+13. **專案中繼資料格式待收斂**：`.owx-project.json` 目前含 `id`／`name`／`slug`／`tags`／`created`；未來「文件專案規範」（由 `/init` 生成）與其關聯欄位待迭代細化（FR-H-17）。
+14. **節點操作的路徑邊界與資源上限待定**：`/rpc/fs/*`、`/rpc/archive/*` 的 `outside_worktree` 檢查、解壓後大小／檔案數上限與逾時待實作輪次細化（FR-H-18／19）。
+15. **建立文檔的模板待定**：「建立文檔」預設 markdown；是否帶 frontmatter（name／date）與對齊專案規範（`/init`）待細化（FR-H-18）。
+16. **外部整合未落地**：Notion API、filer、`pdf→md` 轉換引擎均**待評估/設置**；未設置時以 `501 not_configured` 呈現，不假造成功（FR-H-20～22、[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。
+17. **多格式預覽的渲染器待選**：PDF／Word／CSV／Excel／圖片之 client 端渲染器（工具與授權）待選型；Mermaid 需額外渲染依賴（FR-H-14）。
+18. **編輯器選型待定**：`md` 編輯器（原始 vs WYSIWYG、Mermaid 編輯）與相依授權待細化（FR-H-23）。
+19. **Knowledge Graph 為佔位；Settings 為浮動選單**：ActivityBar 的「知識圖譜」僅**佔位**（待 GraphRAG）。底部 **Settings 開浮動選單**——**參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]**（快捷鍵字母可觸發）；其中**檢查版本**接 `GET /app`、**技能**接 `GET /api/skill`，其餘為佔位。
 
 ---
 
@@ -437,4 +564,7 @@ const OW_URL =
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-19 | v1.9 | §1.2 IN 畫面清單**更新為現況**（含專案入口頁／多分頁／編輯器／NodeMenu／活動列與 Settings 選單）；§10 增 FR-H-26。 |
+| 2026-10-19 | v0.3 | 改版為**文件優先 IDE**（[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）：§1.1 定位聲明改寫（移除「不是文件瀏覽器」）、§1.2 IN／OUT 改八畫面、§1.3 圖更新；§2 新增 Explorer（§2.3）／Outline（§2.4）／DocumentPreview（§2.5），session 清單移入 Chat 標頭（§2.2）；§3 元件樹改三區版面（ActivityBar／FileExplorer／DocumentOutline／DocumentPreview／SessionMenu）；§7.1 補 `GET /file`、`GET /file/content` 並更新 `GET /project`；§8 增 Explorer／Outline／DocumentPreview 狀態欄；§10 增依據；§11 增檔案樹／大綱／預覽缺口（FR-H-12／13／14）。 |
+| 2026-10-18 | v0.2 | 新增 CommandPalette（§2.1 指令面板、§3 元件樹、§4.1 衍生資料註記）；§7.1 補 share／unshare／rename／fork／summarize／revert／unrevert／diff／provider-auth／config／app 端點；§8 增指令面板狀態欄；§10 增依據；§11 增內建目錄手動同步缺口（FR-H-11）。 |
 | 2026-10-17 | v0.1 | 初版：前端定位與關聯、五畫面清單、元件樹、狀態管理、SSE 綁定與連線生命週期、iframe 嵌入契約、與載體層介面、載入／錯誤／空／權限狀態、無障礙、依據 ID。 |

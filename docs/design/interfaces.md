@@ -1,6 +1,6 @@
 # owx L3 設計：介面契約（interfaces.md）
 
-> 版本：v0.1　|　日期：2026-10-17　|　狀態：Draft
+> 版本：v0.7　|　日期：2026-10-19　|　狀態：Draft
 > 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0001`](../adr/ADR-0001-substrate-opencode-cleanroom-omo.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)、[`document-standards.md`](../standards/document-standards.md)、[`coding-standards.md`](../standards/coding-standards.md)，以及載體 repo `opencode-web` 之規格（`docs/mcp.md`）。
 
 ---
@@ -9,7 +9,7 @@
 
 ### 1.1 定位聲明
 
-- **本檔是**：owx 的 **L3（詳細設計）介面契約權威**。定義三條跨邊界契約（hook RPC、MCP tools、opencode server API 客戶端）與 Harness 內部 Rust trait 的**形狀**（方向、欄位、回應語意、時序、錯誤映射、版本策略）。
+- **本檔是**：owx 的 **L3（詳細設計）介面契約權威**。定義跨邊界契約（hook RPC、harness 管理 RPC、MCP tools、opencode server API 客戶端）與 Harness 內部 Rust trait 的**形狀**（方向、欄位、回應語意、時序、錯誤映射、版本策略）。
 - **本檔不是**：
   - **不是** 資料模型與狀態機 → 見 [`data-and-state.md`](data-and-state.md)（本檔不重述任何實體 schema，一律連結）。
   - **不是** 模組分解與元件邊界 → 見 [`harness-architecture.md`](harness-architecture.md)（規劃中；crate 分解見 [`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)）。
@@ -69,7 +69,7 @@ flowchart LR
 
 ---
 
-## 2. 邊界契約 A：hook RPC（shim → sidecar）
+## 2. 邊界契約 A：loopback 入向 RPC（shim／前端 → sidecar）
 
 > **來源需求**：FR-G-1（plugin hook 表面）、FR-HAR-6 至 FR-HAR-13（紀律與路由強制）、FR-SUB-2（權限可觀察）、FR-SUB-5（不擴充 substrate）。**決策依據**：[`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)（sidecar ＋ thin TS shim，loopback RPC）。
 
@@ -253,6 +253,136 @@ sequenceDiagram
 ```
 
 圖說：逾時或 sidecar 不可達時，shim 依 §2.2 的失敗策略處置（此 hook 為 fail-open，`permission.ask` 為 fail-closed）。
+
+### 2.5 harness 管理 RPC（前端 → sidecar）：`POST /rpc/project/create`
+
+> **來源需求**：FR-H-17、FR-H-16。**決策依據**：[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)。
+
+前端（React）經載體／dev proxy 呼叫 sidecar 的 loopback **管理 RPC**。與契約 A 同屬**入向**（client → sidecar）RPC，但為**管理面**（專案生命週期），非 agent 迴圈 hook。
+
+**端點**：`POST /rpc/project/create`
+
+**請求**（`application/json`）：
+
+| 欄位 | 型別 | 必填 | 說明 |
+|---|---|---|---|
+| `name` | string | ✅ | 專案顯示名稱 |
+| `slug` | string | ✅ | 文件英文名；作為資料夾與識別，須符合 `^[a-z0-9][a-z0-9-]*$`（≤64） |
+| `tags` | string[] | | 標籤 |
+
+**回應**（200）：
+
+| 欄位 | 型別 | 說明 |
+|---|---|---|
+| `id` | string | 系統生成專案編號（`OWX-<hex>`） |
+| `name`／`slug` | string | 同請求 |
+| `tags` | string[] | 同請求 |
+| `created` | number | 建立時間（epoch ms） |
+| `worktree` | string | 建立之絕對路徑（`<OWX_KNOWLEDGE_DIR>/<slug>`） |
+
+**錯誤**：`400 {error:"invalid_slug"}`、`409 {error:"already_exists"}`、`500 {error:"mkdir_failed"}`。
+
+**副作用**：建立 `<OWX_KNOWLEDGE_DIR>/<slug>`（env `OWX_KNOWLEDGE_DIR`，預設 `~/knowledge`）、寫 `.owx-project.json`、`git init`（best-effort）。
+
+> **安全（go-live）**：`/rpc` 目前經前端（公開網域）可達；上線前須加 **bearer／存取控制**（`AGENTS.md` §10 go-live）。
+
+### 2.6 harness 管理 RPC（前端 → sidecar）：檔案樹節點操作
+
+> **來源需求**：FR-H-18、FR-H-19。**決策依據**：[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)。
+
+寫入與封裝 RPC，供 Explorer 節點操作使用。**共同安全邊界**：`path` 為**相對** `directory` 的路徑；伺服端正規化後須落在 `directory` 之下，否則回 `400 outside_worktree`。
+
+#### `POST /rpc/fs/mkdir`（建立資料夾）
+
+- **請求**：`{ directory: string, path: string }`
+- **回應**（200）：`{ path: string }`（相對路徑）
+- **錯誤**：`400 invalid_path`／`400 outside_worktree`／`409 already_exists`
+
+#### `POST /rpc/fs/write`（建立／寫入文檔）
+
+- **請求**：`{ directory: string, path: string, content: string, overwrite?: boolean }`
+- **回應**（200）：`{ path: string, bytes: number }`
+- **錯誤**：`400 outside_worktree`／`409 already_exists`（`overwrite` 未設時）
+
+#### `POST /rpc/archive/create`（打包）
+
+- **請求**：`{ directory: string, path: string, format?: "zip" | "tar.gz" | "tar" }`（預設 `zip`）
+- **回應**（200）：`{ archive: string }`（產物相對路徑，如 `<path>.zip`）
+- **錯誤**：`400 outside_worktree`／`404 not_found`／`415 unsupported_format`
+
+#### `POST /rpc/archive/extract`（解封裝）
+
+- **請求**：`{ directory: string, path: string, dest?: string }`（`dest` 預設為去掉副檔名的同名目錄）
+- **回應**（200）：`{ dest: string }`
+- **錯誤**：`400 outside_worktree`／`404 not_found`／`415 unsupported_format`（依副檔名偵測 `.zip`／`.tar.gz`／`.tgz`／`.tar`）
+
+#### `GET /rpc/knowledge/list`（列出文件專案）
+
+- **請求**：（無 body）
+- **回應**（200）：`{ projects: [{ slug, name, id?, tags?, created?, worktree, dirty }] }`——列舉 `OWX_KNOWLEDGE_DIR`（預設 `~/knowledge`）之子目錄；若含 `.owx-project.json` 則附 `id`／`tags`／`created`；`dirty` 為該專案是否有未提交變更（`git status --porcelain` 非空）。
+- **語意**：**文件專案的真實來源**（非 opencode `GET /project`）；前端「專案入口頁」以此列表。
+
+#### `GET /rpc/git/status`（檔案變更狀態）
+
+- **請求**：query `directory`
+- **回應**（200）：`{ files: [{ path, status }] }`（`status` ∈ `modified`／`added`／`deleted`／`renamed`／`untracked`）
+- **語意**：`git -C <directory> status --porcelain`；非 git 目錄回空清單。用於 Explorer 節點的**變更色**。
+
+#### `POST /rpc/git/commit`（提交全部變更）
+
+- **請求**：`{ directory, message }`
+- **回應**（200）：`{ committed: boolean, reason? }`（無變更時 `committed:false`，`reason:"nothing_to_commit"`）
+- **錯誤**：`400 invalid_directory`／`400 commit_failed`（附 `detail`）
+- **語意**：`git add -A` → 若有變更則 `git commit -m <message>`（以 `-c user.name=owx -c user.email=owx@localhost` 覆寫身分）。供「文件全部提交」。
+
+> **安全（go-live）**：寫入面風險高；上線前須加 **bearer／存取控制**，並限制解壓後大小與檔案數（防壓縮炸彈）。
+
+### 2.7 harness 管理 RPC（前端 → sidecar）：文件匯入／轉換／匯出／分享（規劃中）
+
+> **來源需求**：FR-H-20～22。**決策依據**：[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)。
+
+**共同邊界**：`path` 相對 `directory`，限 worktree 之下（`400 outside_worktree`）。外部整合之憑證／端點以 config/env 注入，不寫死。
+
+#### `POST /rpc/import/file`
+
+- **請求**：`{ directory, path, contentBase64, overwrite?: boolean }`
+- **回應**（200）：`{ path, bytes }`
+- **錯誤**：`400 outside_worktree`／`409 already_exists`
+
+#### `POST /rpc/import/notion`
+
+- **請求**：`{ directory, url, dest?: string }`
+- **回應**（200）：`{ path }`
+- **錯誤**：`501 not_configured`（Notion API 未設置）
+
+#### `POST /rpc/convert`
+
+- **請求**：`{ directory, path, to: "pdf" | "md" }`
+- **回應**（200）：`{ output }`
+- **錯誤**：`400 outside_worktree`／`404 not_found`／`415 unsupported_conversion`（如 `pdf → md` 若未支援）
+
+#### `POST /rpc/export/filer`
+
+- **請求**：`{ directory, path }`
+- **回應**（200）：`{ url }`
+- **錯誤**：`501 not_configured`（filer 未設置）
+
+#### `POST /rpc/export/notion`
+
+- **請求**：`{ directory, path }`
+- **回應**（200）：`{ url? }`
+- **錯誤**：`501 not_configured`
+
+#### `POST /rpc/share`
+
+- **請求**：`{ directory, paths: string[], permission?: "view" | "edit", regenerate?: boolean }`（`paths`＝**包含的文件清單**；`permission` 預設 `view`＝只能查詢）
+- **回應**（200）：`{ url, token }`（連結含**文件 id＋token**）
+- **錯誤**：`400 outside_worktree`／`404 not_found`
+- **語意**：參考 KAC `doc-server`——token 決定**包含哪些文件**與**權限（查詢／編輯）**；`regenerate: true` 使**舊 token 失效**。
+
+> **資源上限**：本節與 §2.6 之上傳／封裝預設 **50MB**（env `OWX_MAX_UPLOAD_BYTES`，可調）。
+
+> **狀態**：本節為**規劃中**契約；Notion／filer 未設置時以 `501 not_configured` 佔位（**不假造成功**）。
 
 ---
 
@@ -661,4 +791,8 @@ pub struct ErrorPayload {
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-19 | v0.7 | §2.6 增 `POST /rpc/git/commit`（提交全部變更；供「文件全部提交」）。 |
+| 2026-10-19 | v0.4 | 新增 **§2.7 harness 管理 RPC：文件匯入／轉換／匯出／分享（規劃中）**（`/rpc/import/file`、`/rpc/import/notion`、`/rpc/convert`、`/rpc/export/filer`、`/rpc/export/notion`、`/rpc/share`；含 `501 not_configured` 佔位）。依 [`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)。 |
+| 2026-10-19 | v0.3 | 新增 **§2.6 harness 管理 RPC：檔案樹節點操作**（`/rpc/fs/mkdir`、`/rpc/fs/write`、`/rpc/archive/create`、`/rpc/archive/extract` 契約、共同安全邊界、錯誤、go-live 註記）。依 [`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)。 |
+| 2026-10-19 | v0.2 | §2 擴為「loopback 入向 RPC（shim／前端 → sidecar）」並新增 **§2.5 harness 管理 RPC**（`POST /rpc/project/create` 契約、錯誤、副作用、安全註記）；§1.1 契約清單補「harness 管理 RPC」。依 [`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)。 |
 | 2026-10-17 | v0.1 | 初版：三條邊界契約（hook RPC／MCP tools／server API 客戶端）、內部 Rust trait 契約、錯誤模型與映射、版本與相容策略。依 [`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md) 邊界決策；資料形狀連結 [`data-and-state.md`](data-and-state.md)，不重述。 |

@@ -1,6 +1,6 @@
 # 基礎核心需求規格（clean-room 回溯）
 
-> 版本：v0.3　|　日期：2026-10-17　|　狀態：Draft
+> 版本：v1.3　|　日期：2026-10-19　|　狀態：Draft
 > 來源：clean-room 回溯自 `opencode`（MIT）公開文件與可觀察行為、`omo`（SUL-1.0）可觀察行為；載體為自有 `opencode-web`。
 >
 > 目的：把「基礎核心 = opencode + omo，以 opencode-web 為載體」的**功能需求**回溯成規格，
@@ -157,6 +157,26 @@ flowchart TB
 - **FR-H-8** **主題與鍵綁**（themes / keybinds）。
 - **FR-H-9** **TUI attention**（桌面通知 / 音效）。
 - **FR-H-10** `/tui` 控制 API。
+- **FR-H-11** **Web 指令面完整對齊 opencode（server + TUI 內建鏡射，皆可執行）**：前端 `/` 指令面板同時列出（A）opencode server 指令（`GET /command` 即時取得，`source` ∈ command／mcp／skill）與（B）opencode TUI 內建指令之**鏡射目錄**（owx 自有常數、版本釘選），兩者皆可執行；瀏覽器不可用者須標示不可用並附原因，不得偽造。
+  - **驗收**：
+    - 給定開啟 `/` 指令面板，則同時列出 server 指令與內建鏡射指令，且每項可執行（server-backed 呼叫對應 opencode 端點；client-side 觸發 owx UI 動作）。
+    - 邊界：server 指令以 `GET /command` 為權威；內建鏡射為 owx 自有常數，不經任何 opencode HTTP API；鏡射僅含名稱／描述／來源等 metadata（opencode MIT，見 §6）。
+    - 錯誤：瀏覽器不可用之指令（如 `/warp`、`/org`、`/variants`、`/workspaces`）顯示為不可用並附原因，不得偽造為可執行。
+- **FR-H-12** **專案檔案總管（Explorer）**：側面板提供**專案檔案樹**——專案切換器（`GET /project`）＋**延遲載入**的目錄樹（`GET /file?path=<dir>&directory=<root>`；entries 為 `{name,path,absolute,type,ignored}`）。預設／初始專案＝**當前作用中專案**，可設定，初始為 **owx**。
+- **FR-H-13** **文件大綱（Outline）**：側面板提供**當前預覽文件**的 markdown 標題（H1–H6）大綱，於 **client 端**解析；點擊標題捲動文件預覽至對應錨點。
+- **FR-H-14** **文件預覽（DocumentPreview，多格式）**：以 **client 端**渲染當前文件——**markdown**（`react-markdown`，含**標題錨點**與 **Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…，以對應渲染器）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**僅 `md` 可編輯**（見 FR-H-23），其餘唯讀。
+- **FR-H-15** **版面區域可收合／可調寬**：三區（左側面板 Explorer／Outline、中 DocumentPreview、右 Chat）各自**可收合（collapse）與可開啟（re-open）**；相鄰區之間有可拖曳 **resizer** 調整寬度——側面板 **160–480px**、Chat **300–760px**，中間 DocumentPreview 為**彈性填充**（寬度由兩側拖曳間接決定），預設寬側面板 **280px**、Chat **400px**；收合後以**常駐控制**復原——左側面板經 **ActivityBar** 圖示（點擊當前作用中圖示即切換）、DocumentPreview／Chat 經**對側區標頭**的切換按鈕；**ActivityBar（48px 圖示列）恆常可見**。
+- **FR-H-16** **專案入口頁與專案控制（ProjectHome／ProjectMenu）**：Explorer 標頭於當前專案名右側提供**專案控制選單**（開啟／新增／關閉專案）；**關閉專案**切換為**全頁專案入口**（無側欄、無 chat）——卡片網格列出 **`~/knowledge` 下之文件專案**（由 **owx harness** `GET /rpc/knowledge/list` 提供；卡片顯示名稱與標籤）；**本頁即 owx 首頁（預設進入）**。**（文件專案的真實來源是 `~/knowledge`，非 opencode `GET /project`。）**
+- **FR-H-17** **新增專案（建立於 `~/knowledge`）**：以 **modal** 輸入名稱、文件英文名（作為資料夾／專案識別）、標籤（以「,」分隔多個）；系統生成**專案編號**與**建立時間**；建立後**開啟該專案並執行 opencode `/init`**。建立由 **owx harness** 之 `POST /rpc/project/create` 負責（opencode 無建立專案 API；見 [`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)）。
+- **FR-H-18** **檔案樹節點操作選單（NodeMenu，每節點觸發）**：filetree 的**每個節點**（目錄／檔案）**hover 後按右鍵（contextmenu）**顯示功能選單——**建立資料夾**、**建立文檔（預設 `md`，可編輯）**、**匯入檔案（任何格式；非 `md` 唯讀不可編輯）**、**複製（相對）路徑**、**複製絕對路徑**、**匯出**、**轉換格式**、**打包**、**解封裝**、**分享**。建立與寫入由 **owx harness** 之 fs RPC（`POST /rpc/fs/mkdir`／`POST /rpc/fs/write`）負責（opencode 無寫入 API；見 [`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)）；複製路徑為純前端。
+- **FR-H-19** **文件打包／解封裝**：對目錄或檔案**打包**為壓縮檔（預設 `zip`，另支援 `tar.gz`／`tar`）；對壓縮檔**解封裝**（依副檔名偵測格式）；由 **owx harness** 之 archive RPC（`POST /rpc/archive/create`／`POST /rpc/archive/extract`）負責（[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)）。
+- **FR-H-20** **文件匯入（from file／Notion）**：自本機檔案匯入至專案目錄（任何格式，非 `md` 唯讀）；自 **Notion** 匯入（**待設置 Notion API**）；由 **owx harness** 之 `POST /rpc/import/file`／`POST /rpc/import/notion` 負責（[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。
+- **FR-H-21** **文件格式轉換**：`md → pdf`；`pdf → md` **待評估可行性**；由 **owx harness** 之 `POST /rpc/convert` 負責。`md → pdf` 引擎建議採 **Rust 原生、MIT／Apache 授權**（如 `pulldown-cmark`＋`printpdf`，或 `typst`（Apache-2.0）），**不使用 GPL 之 pandoc**；CJK 字型需內嵌（如 Noto，OFL）（[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。
+- **FR-H-22** **文件匯出與分享**：**匯出** to filer（載體 filer，回 URL）／to Notion（待設置）。**分享**：生成**分享 token**，並於 token 設定**包含哪些文件**（可選清單）與**權限（查詢／編輯，預設查詢）**；產生連結（含文件 id＋token）；可**重新產生**（舊 token 失效）。**參考 KAC `doc-server` 之分享形式**。由 **owx harness** 之 `POST /rpc/export/filer`／`POST /rpc/export/notion`／`POST /rpc/share` 負責（[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。
+- **FR-H-23** **文件編輯（僅 `md`）**：前端提供 `md` **編輯器**，支援 **Mermaid**；**非 `md` 檔案唯讀、不可編輯**。儲存經 **owx harness** 之 `POST /rpc/fs/write`（`overwrite`）（[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)）。
+- **FR-H-24** **檔案樹圖示與變更色**：Explorer 每個節點顯示**目錄／檔案類型圖示並帶顏色**（folder／markdown／code／image／data／archive／pdf）；**有變更的檔案以文字顏色區隔**（modified／added／deleted／renamed／untracked），來源為 **owx harness** `GET /rpc/git/status`。
+- **FR-H-25** **文件預覽多分頁與分頁選單**：文件預覽為**多分頁**（可同時開啟多檔、切換、單頁關閉）；分頁列右側「⋯」**浮動選單**——**關閉全部文件**、**文件全部提交**（`POST /rpc/git/commit`）、**搜尋**（檔名）。
+- **FR-H-26** **活動列（ActivityBar）與 Settings 浮動選單**：ActivityBar 提供 **Explorer／Outline／Knowledge Graph** 切換（**Knowledge Graph 為佔位**，待 GraphRAG）；底部 **Settings** 開**浮動選單**——**參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]**（快捷鍵字母可觸發）；**技能**接 `GET /api/skill`、**檢查版本**接 `GET /app`，其餘為**佔位**（待後續定義）。
 
 ### FR-I｜部署與多租戶
 - **FR-I-1** 內外網分離：內部 port 綁 `127.0.0.1`，對外由 reverse proxy 暴露。
@@ -241,6 +261,16 @@ flowchart TB
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-19 | v1.3 | 新增 **FR-H-26「活動列與 Settings 浮動選單」**（Explorer／Outline／**Knowledge Graph 佔位**；Settings：參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]；技能／檢查版本接真實端點，餘佔位）。 |
+| 2026-10-19 | v1.2 | FR-H-16 明訂**專案頁即 owx 首頁（預設進入）**；新增 **FR-H-25「文件預覽多分頁與分頁選單」**（關閉全部文件／文件全部提交 `POST /rpc/git/commit`／搜尋）。 |
+| 2026-10-19 | v1.1 | 修正 FR-H-16：專案入口頁來源改為 **`~/knowledge` 文件專案**（harness `GET /rpc/knowledge/list`），非 opencode `GET /project`；新增 **FR-H-24「檔案樹圖示與變更色」**（型別圖示＋顏色；變更色來源 `GET /rpc/git/status`）。 |
+| 2026-10-19 | v1.0 | 依回饋細化：FR-H-18 觸發改**右鍵（hover，contextmenu）**（非「⋯」）；FR-H-14 擴為**多格式預覽**（md／pdf／word／csv／excel／圖片）＋ **Mermaid**；新增 **FR-H-23「文件編輯（僅 md）」**；FR-H-21 補 **md→pdf 引擎建議**（Rust MIT/Apache，不用 GPL pandoc；CJK 內嵌字型）；FR-H-22 分享改為 **token＋包含文件清單＋權限（查詢/編輯，預設查詢）＋重新產生**（參考 KAC `doc-server`）；上限預設 **50MB**（系統參數可調）。 |
+| 2026-10-19 | v0.9 | 擴充 FR-H-18（選單改為 **filetree 每節點觸發**；建立文檔預設 `md`、匯入任何檔案但**非 md 唯讀**；選單增匯入／匯出／轉換／分享）；新增 FR-H-20「文件匯入（from file／Notion）」、FR-H-21「文件格式轉換（md→pdf；pdf→md 待評估）」、FR-H-22「文件匯出與分享（to filer／Notion）」；由 owx harness 提供（[ADR-0010](../adr/ADR-0010-document-lifecycle-via-harness.md)）。 |
+| 2026-10-19 | v0.8 | 新增 FR-H-18「檔案樹節點操作選單（NodeMenu）」、FR-H-19「文件打包／解封裝」：建立資料夾／文檔、複製相對／絕對路徑、打包（zip／tar.gz／tar）／解封裝，皆由 owx harness fs／archive RPC 提供（opencode 無寫入/封裝 API）（[ADR-0009](../adr/ADR-0009-filetree-node-operations-via-harness.md)）。 |
+| 2026-10-19 | v0.7 | 新增 FR-H-16「專案入口頁與專案控制」、FR-H-17「新增專案（建立於 `~/knowledge`）」：專案生命週期由 owx harness 提供（`POST /rpc/project/create`，opencode 無建立專案 API），前端含全頁入口頁與新增 modal，建立後執行 `/init`（[ADR-0008](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)）。 |
+| 2026-10-19 | v0.6 | 新增 FR-H-15「版面區域可收合／可調寬」：三區各自可收合／可開啟，相鄰區以 resizer 調寬（側面板 160–480px、Chat 300–760px，DocumentPreview 彈性填充；預設 280／400px），收合後以常駐控制（ActivityBar 圖示、對側區標頭切換鈕）復原，ActivityBar 恆常可見。 |
+| 2026-10-19 | v0.5 | 新增 FR-H-12「專案檔案總管」、FR-H-13「文件大綱（markdown 標題）」、FR-H-14「文件預覽」：文件優先 IDE 版面（三區）之 Explorer／Outline／DocumentPreview；doc-status 重用 FR-CARRIER-10，不重造（[ADR-0007](../adr/ADR-0007-document-first-ide-layout.md)）。 |
+| 2026-10-18 | v0.4 | 新增 FR-H-11「Web 指令面完整對齊 opencode」：前端 `/` 指令面板同時列出 server 指令（`GET /command`）與 TUI 內建指令鏡射目錄（owx 自有常數、版本釘選），皆可執行；不可用者標示原因、不偽造。 |
 | 2026-10-17 | v0.3 | 對照 opencode 官方文件（v1/v2）補齊覆蓋率：FR-A 補 8~13、FR-B 補 7~12、FR-C 補 7~11、FR-D 補 5~11、FR-E 補 6~13（含 fallback 來源註記）、FR-F 補 7~14、FR-G 補 6~11、FR-H 補 4~10、FR-I 補 5~12；§6 來源對映細化並註明 opencode v1/v2 與 repo 名；§7 增覆蓋率註記。 |
 | 2026-10-17 | v0.2 | 補 §2.2 必備表頭（版本/日期/狀態/來源）；§2 ASCII 架構視圖遷為 Mermaid（依文件標準 §6）；§8 D1 標為已定案並連 ADR-0003；新增 §9 定位與關聯、§10 變更紀錄。 |
 | 2026-10-17 | v0.1 | 初版：clean-room 回溯 FR A-I、NFR、邊界、來源對映、缺口、待決。 |

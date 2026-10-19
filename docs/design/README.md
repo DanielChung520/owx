@@ -1,6 +1,6 @@
 # owx L3 設計文件索引（docs/design）
 
-> 版本：v0.2　|　日期：2026-10-17　|　狀態：Draft
+> 版本：v1.2　|　日期：2026-10-19　|　狀態：Draft
 > 來源：彙整自 [`../spec/`](../spec/)、[`../adr/`](../adr/) 與 [`../standards/document-standards.md`](../standards/document-standards.md) §4.4。
 
 ## 0. 定位與關聯
@@ -27,7 +27,7 @@ flowchart LR
 | [interfaces.md](interfaces.md) | 邊界契約（hook RPC／MCP tools／opencode API）、內部 Rust 介面、錯誤模型 | ADR-0004、FR-G、FR-A |
 | [data-and-state.md](data-and-state.md) | 資料模型（ER）、狀態機（session／委派／fallback） | FR-D、FR-A、FR-C、FR-E |
 | [frontend.md](frontend.md) | React 前端：畫面、元件樹、狀態、SSE、iframe、a11y | FR-H、FR-CARRIER |
-| [testing.md](testing.md) | 測試策略、FR→TC 全對映（157）、覆蓋率、TDD、clean-room 掃描、CI | AGENTS.md §5.5、coding／document／licensing |
+| [testing.md](testing.md) | 測試策略、FR→TC 全對映（173 FR／197 TC）、覆蓋率、TDD、clean-room 掃描、CI | AGENTS.md §5.5、coding／document／licensing |
 
 ## 3. 建議閱讀順序
 
@@ -54,5 +54,12 @@ flowchart LR
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-19 | v1.2 | 同步 testing.md 之 FR→TC 對映數（172 → 173 FR／195 → 197 TC），對齊 FR-H-26（活動列與 Settings 浮動選單）。 |
+| 2026-10-19 | v0.8 | 同步 testing.md 之 FR→TC 對映數（166 → 169 FR／180 → 188 TC），對齊新增 FR-H-20～22（文件匯入／轉換／匯出／分享，[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。 |
+| 2026-10-19 | v0.7 | 同步 testing.md 之 FR→TC 對映數（164 → 166 FR／174 → 180 TC），對齊新增 FR-H-18／19（檔案樹節點操作，[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)）。 |
+| 2026-10-19 | v0.6 | 同步 testing.md 之 FR→TC 對映數（162 → 164 FR／169 → 174 TC），對齊新增 FR-H-16／17（專案生命週期，[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)）。 |
+| 2026-10-19 | v0.5 | 同步 testing.md 之 FR→TC 對映數（161 → 162 FR／167 → 169 TC），對齊新增 FR-H-15（版面區域可收合／可調寬）。 |
+| 2026-10-19 | v0.4 | 同步 testing.md 之 FR→TC 對映數（158 → 161 FR／160 → 167 TC），對齊新增 FR-H-12／13／14（文件優先 IDE 版面，[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）。 |
+| 2026-10-18 | v0.3 | 同步 testing.md 之 FR→TC 對映數（157 → 158 FR／160 TC），對齊新增 FR-H-11。 |
 | 2026-10-17 | v0.2 | 對齊 ADR-0005/0006 與實作：L4 狀態改「進行中（step② 骨架）」；ADR 清單補 0005/0006；D2–D5 標為已定案。 |
 | 2026-10-17 | v0.1 | 初版：L3 設計索引（harness-architecture／interfaces／data-and-state／frontend／testing）與分層導覽。 |

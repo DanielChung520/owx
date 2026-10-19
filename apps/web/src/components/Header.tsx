@@ -1,37 +1,70 @@
-import type { ProviderGroup } from "../lib/api";
+import type { ProviderGroup, SessionSummary } from "../lib/api";
 import type { ConnStatus } from "../lib/types";
+import { SessionMenu } from "./SessionMenu";
 
-const LABELS: Record<ConnStatus, string> = {
-  connecting: "連線中",
-  live: "已連線",
-  reconnecting: "重連中",
-  closed: "未連線",
+type ConnLight = "green" | "red" | "gray";
+
+function connLight(status: ConnStatus): ConnLight {
+  if (status === "live") {
+    return "green";
+  }
+  if (status === "reconnecting") {
+    return "red";
+  }
+  return "gray";
+}
+
+const LIGHT_LABELS: Record<ConnLight, string> = {
+  green: "已連線",
+  red: "連線異常",
+  gray: "未連接",
 };
 
 export function Header({
   status,
-  title,
   agent,
   model,
   agents,
   providers,
+  sessions,
+  activeId,
   onAgent,
   onModel,
+  onSelectSession,
+  onNewSession,
+  docCollapsed,
+  onToggleDoc,
 }: {
   status: ConnStatus;
-  title?: string;
   agent?: string;
   model?: string;
   agents: string[];
   providers: ProviderGroup[];
+  sessions: readonly SessionSummary[];
+  activeId: string | null;
   onAgent: (name: string) => void;
   onModel: (providerID: string, id: string) => void;
+  onSelectSession: (id: string) => void;
+  onNewSession: () => void;
+  docCollapsed: boolean;
+  onToggleDoc: () => void;
 }): JSX.Element {
+  const light = connLight(status);
   return (
     <header className="header">
       <div className="header-left">
-        <span className="brand">owx</span>
-        {title !== undefined ? <span className="title">{title}</span> : null}
+        <span
+          className={`conn conn-${light}`}
+          role="status"
+          aria-label={LIGHT_LABELS[light]}
+          title={LIGHT_LABELS[light]}
+        />
+        <SessionMenu
+          sessions={sessions}
+          activeId={activeId}
+          onSelect={onSelectSession}
+          onNew={onNewSession}
+        />
       </div>
       <div className="header-right">
         <select
@@ -72,9 +105,15 @@ export function Header({
             </optgroup>
           ))}
         </select>
-        <span className={`status status-${status}`} aria-live="polite">
-          {LABELS[status]}
-        </span>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={docCollapsed ? "顯示文件" : "隱藏文件"}
+          title={docCollapsed ? "顯示文件" : "隱藏文件"}
+          onClick={onToggleDoc}
+        >
+          ▤
+        </button>
       </div>
     </header>
   );

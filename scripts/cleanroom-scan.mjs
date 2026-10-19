@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const cc = (...n) => String.fromCharCode(...n);
 const FORBIDDEN = [
@@ -15,7 +15,7 @@ const TEXT_EXT = /\.(md|ts|tsx|mts|cts|js|mjs|cjs|json|jsonc|rs|toml|ya?ml|css|h
 
 const files = execFileSync("git", ["ls-files"], { encoding: "utf8" })
   .split("\n")
-  .filter((f) => f !== "" && TEXT_EXT.test(f));
+  .filter((f) => f !== "" && TEXT_EXT.test(f) && existsSync(f));
 
 const hits = [];
 for (const file of files) {
