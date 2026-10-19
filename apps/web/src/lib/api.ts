@@ -37,8 +37,12 @@ export interface SkillInfo {
   [key: string]: unknown;
 }
 
-export async function listSessions(): Promise<SessionSummary[]> {
-  const res = await fetch(`${baseUrl}/session`);
+export async function listSessions(directory?: string): Promise<SessionSummary[]> {
+  const params = new URLSearchParams({ roots: "true" });
+  if (directory !== undefined && directory !== "") {
+    params.set("directory", directory);
+  }
+  const res = await fetch(`${baseUrl}/session?${params.toString()}`);
   if (!res.ok) {
     throw new Error(`listSessions failed: ${res.status}`);
   }
@@ -75,8 +79,12 @@ export function toChatMessages(envelopes: MessageEnvelope[]): ChatMessage[] {
       .filter((part) => part.type === "text")
       .map((part) => part.text ?? "")
       .join("");
+    const reasoning = env.parts
+      .filter((part) => part.type === "reasoning")
+      .map((part) => part.text ?? "")
+      .join("");
     const role: Role = env.info.role === "user" ? "user" : "assistant";
-    return { id: env.info.id, role, text };
+    return { id: env.info.id, role, text, reasoning };
   });
 }
 
@@ -190,14 +198,17 @@ export async function runSessionCommand(
   }
 }
 
-export async function sendMessage(sessionId: string, text: string): Promise<void> {
-  const res = await fetch(`${baseUrl}/session/${sessionId}/message`, {
+export async function sendMessageAsync(
+  sessionId: string,
+  text: string,
+): Promise<void> {
+  const res = await fetch(`${baseUrl}/session/${sessionId}/prompt_async`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ parts: [{ type: "text", text }] }),
   });
   if (!res.ok) {
-    throw new Error(`sendMessage failed: ${res.status}`);
+    throw new Error(`sendMessageAsync failed: ${res.status}`);
   }
 }
 

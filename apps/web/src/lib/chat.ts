@@ -3,14 +3,20 @@ import type { ChatMessage, ConnStatus, Role } from "./types";
 export interface ChatState {
   messages: ChatMessage[];
   status: ConnStatus;
+  busy: boolean;
 }
 
-export const initialChatState: ChatState = { messages: [], status: "connecting" };
+export const initialChatState: ChatState = {
+  messages: [],
+  status: "connecting",
+  busy: false,
+};
 
 export type ChatAction =
   | { type: "connection"; status: ConnStatus }
+  | { type: "busy"; busy: boolean }
   | { type: "message"; message: ChatMessage }
-  | { type: "patch"; id: string; role?: Role; text?: string }
+  | { type: "patch"; id: string; role?: Role; text?: string; reasoning?: string }
   | { type: "hydrate"; messages: ChatMessage[] }
   | { type: "clear" };
 
@@ -18,6 +24,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case "connection":
       return { ...state, status: action.status };
+    case "busy":
+      return { ...state, busy: action.busy };
     case "message": {
       const index = state.messages.findIndex((m) => m.id === action.message.id);
       if (index < 0) {
@@ -38,6 +46,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
               id: action.id,
               role: action.role ?? "assistant",
               text: action.text ?? "",
+              reasoning: action.reasoning,
             },
           ],
         };
@@ -51,13 +60,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         ...current,
         role: action.role ?? current.role,
         text: action.text ?? current.text,
+        reasoning: action.reasoning ?? current.reasoning,
       };
       return { ...state, messages };
     }
     case "hydrate":
       return { ...state, messages: action.messages };
     case "clear":
-      return { ...state, messages: [] };
+      return { ...state, messages: [], busy: false };
     default:
       return state;
   }

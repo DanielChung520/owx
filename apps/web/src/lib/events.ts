@@ -60,18 +60,42 @@ export function mapEvent(
 
   if (type === "message.part.updated") {
     const part = asRecord(properties.part);
-    if (part?.type !== "text") {
-      return null;
-    }
-    const id = part.messageID;
-    const text = part.text;
+    const id = part?.messageID;
+    const text = part?.text;
     if (typeof id !== "string" || typeof text !== "string") {
       return null;
     }
-    if (!matchesSession(part.sessionID, sessionId)) {
+    if (!matchesSession(part?.sessionID, sessionId)) {
       return null;
     }
-    return { type: "patch", id, text };
+    if (part?.type === "text") {
+      return { type: "patch", id, text };
+    }
+    if (part?.type === "reasoning") {
+      return { type: "patch", id, reasoning: text };
+    }
+    return null;
+  }
+
+  if (type === "session.status") {
+    if (!matchesSession(properties.sessionID, sessionId)) {
+      return null;
+    }
+    const status = asRecord(properties.status);
+    if (status?.type === "busy") {
+      return { type: "busy", busy: true };
+    }
+    if (status?.type === "idle") {
+      return { type: "busy", busy: false };
+    }
+    return null;
+  }
+
+  if (type === "session.idle") {
+    if (!matchesSession(properties.sessionID, sessionId)) {
+      return null;
+    }
+    return { type: "busy", busy: false };
   }
 
   return null;

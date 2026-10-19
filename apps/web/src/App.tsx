@@ -45,7 +45,7 @@ import {
   listSkills,
   readFileContent,
   runSessionCommand,
-  sendMessage,
+  sendMessageAsync,
   setSessionAgent,
   setSessionModel,
   toChatMessages,
@@ -121,7 +121,7 @@ export function App(): JSX.Element {
   useSessionStream(activeId, dispatch);
 
   const refreshSessions = async (): Promise<void> => {
-    setSessions(await listSessions());
+    setSessions(await listSessions(projectRoot));
   };
 
   useEffect(() => {
@@ -137,11 +137,6 @@ export function App(): JSX.Element {
       }
       try {
         setProviders(await listProviders());
-      } catch (cause) {
-        setError(describe(cause));
-      }
-      try {
-        await refreshSessions();
       } catch (cause) {
         setError(describe(cause));
       }
@@ -212,6 +207,25 @@ export function App(): JSX.Element {
   }, [projectRoot, reloadKey]);
 
   useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await listSessions(projectRoot);
+        if (!cancelled) {
+          setSessions(list);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setError(describe(cause));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectRoot]);
+
+  useEffect(() => {
     if (notice === null) {
       return;
     }
@@ -271,12 +285,16 @@ export function App(): JSX.Element {
   const openProject = (worktree: string): void => {
     setProjectRoot(worktree);
     closeAllDocs();
+    setActiveId(null);
+    dispatch({ type: "clear" });
     setHomeMode(false);
   };
 
   const closeProject = (): void => {
     setProjectRoot("");
     closeAllDocs();
+    setActiveId(null);
+    dispatch({ type: "clear" });
     setHomeMode(true);
   };
 
@@ -554,7 +572,7 @@ export function App(): JSX.Element {
   const newSession = (): void => {
     void (async () => {
       try {
-        const id = await createSession();
+        const id =     await createSession(projectRoot);
         setActiveId(id);
         dispatch({ type: "clear" });
         await refreshSessions();
@@ -570,10 +588,10 @@ export function App(): JSX.Element {
       try {
         let id = activeId;
         if (id === null) {
-          id = await createSession();
+          id =     await createSession(projectRoot);
           setActiveId(id);
         }
-        await sendMessage(id, text);
+        await sendMessageAsync(id, text);
         await refreshSessions();
         setError(null);
       } catch (cause) {
@@ -656,7 +674,7 @@ export function App(): JSX.Element {
         await runBuiltinCommand(command.id, {
           activeSessionId: activeId,
           newSession: async () => {
-            const id = await createSession();
+            const id =     await createSession(projectRoot);
             setActiveId(id);
             dispatch({ type: "clear" });
             return id;
@@ -892,7 +910,7 @@ export function App(): JSX.Element {
               {notice}
             </p>
           ) : null}
-          <MessageList messages={state.messages} />
+          <MessageList messages={state.messages} busy={state.busy} />
           <MessageInput
             disabled={state.status !== "live"}
             onSend={handleSend}

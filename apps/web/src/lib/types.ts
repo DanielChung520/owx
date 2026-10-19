@@ -6,6 +6,7 @@ export interface ChatMessage {
   id: string;
   role: Role;
   text: string;
+  reasoning?: string;
 }
 
 /** SSE 連線生命週期狀態。 */

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSession, sendMessage } from "./api";
+import { createSession, sendMessageAsync } from "./api";
 
 interface MockResponse {
   ok: boolean;
@@ -42,12 +42,12 @@ describe("api", () => {
     await expect(createSession()).rejects.toThrow(/missing id/);
   });
 
-  it("sendMessage posts text parts to /session/{id}/message", async () => {
+  it("sendMessageAsync posts text parts to /session/{id}/prompt_async", async () => {
     const fn = mockFetch({ ok: true });
-    await sendMessage("s1", "hello");
+    await sendMessageAsync("s1", "hello");
     const call = fn.mock.calls[0];
     expect(call).toBeDefined();
-    expect(String(call?.[0])).toContain("/session/s1/message");
+    expect(String(call?.[0])).toContain("/session/s1/prompt_async");
     const init = call?.[1] as RequestInit;
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({
@@ -55,8 +55,8 @@ describe("api", () => {
     });
   });
 
-  it("sendMessage throws on non-ok", async () => {
+  it("sendMessageAsync throws on non-ok", async () => {
     mockFetch({ ok: false, status: 400 });
-    await expect(sendMessage("s1", "x")).rejects.toThrow(/sendMessage failed/);
+    await expect(sendMessageAsync("s1", "x")).rejects.toThrow(/sendMessageAsync failed/);
   });
 });

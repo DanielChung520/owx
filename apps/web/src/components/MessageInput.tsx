@@ -11,6 +11,21 @@ import {
 } from "../lib/commands";
 import { CommandPalette } from "./CommandPalette";
 
+function SendIcon(): JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 13V3M8 3 3.5 7.5M8 3l4.5 4.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function MessageInput({
   disabled,
   onSend,
@@ -192,7 +207,7 @@ export function MessageInput({
         <textarea
           id="prompt"
           ref={textareaRef}
-          rows={2}
+          className="composer-input"
           value={value}
           disabled={disabled}
           placeholder={disabled ? "未連線" : "輸入訊息…（/ 指令、@ 檔案）"}
@@ -201,8 +216,14 @@ export function MessageInput({
           aria-controls={matches.length > 0 ? "command-listbox" : undefined}
           aria-activedescendant={activeId !== null ? `cmd-${activeId}` : undefined}
         />
-        <button type="submit" disabled={disabled || value.trim() === ""}>
-          送出
+        <button
+          type="submit"
+          className="composer-send"
+          aria-label="送出"
+          title="送出"
+          disabled={disabled || value.trim() === ""}
+        >
+          <SendIcon />
         </button>
       </form>
     </div>

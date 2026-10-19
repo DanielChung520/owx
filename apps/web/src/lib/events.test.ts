@@ -21,17 +21,33 @@ describe("mapEvent", () => {
     expect(action).toEqual({ type: "patch", id: "m1", text: "hi" });
   });
 
-  it("ignores non-text parts", () => {
+  it("maps a reasoning part to a patch with reasoning", () => {
     const action = mapEvent({
       type: "message.part.updated",
-      properties: { part: { type: "reasoning", messageID: "m1" } },
+      properties: { part: { type: "reasoning", messageID: "m1", text: "think" } },
     });
-    expect(action).toBeNull();
+    expect(action).toEqual({ type: "patch", id: "m1", reasoning: "think" });
+  });
+
+  it("maps session.status busy to busy", () => {
+    const action = mapEvent({
+      type: "session.status",
+      properties: { sessionID: "s1", status: { type: "busy" } },
+    });
+    expect(action).toEqual({ type: "busy", busy: true });
+  });
+
+  it("maps session.idle to not busy", () => {
+    const action = mapEvent({
+      type: "session.idle",
+      properties: { sessionID: "s1" },
+    });
+    expect(action).toEqual({ type: "busy", busy: false });
   });
 
   it("ignores unknown event types", () => {
     expect(
-      mapEvent({ type: "session.idle", properties: { sessionID: "s1" } }),
+      mapEvent({ type: "server.heartbeat", properties: {} }),
     ).toBeNull();
   });
 

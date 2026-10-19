@@ -1,6 +1,6 @@
 # owx L3 設計：前端（frontend.md）
 
-> 版本：v1.9　|　日期：2026-10-19　|　狀態：Draft
+> 版本：v2.5　|　日期：2026-10-19　|　狀態：Draft
 > 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)、[`document-standards.md`](../standards/document-standards.md)，以及載體 repo `opencode-web` 之規格（`README.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`）。
 
 ---
@@ -96,7 +96,7 @@ flowchart LR
 
 ### 2.1 主聊天視窗（main chat window）
 
-- **目的**：承載一次對話的完整生命週期。顯示訊息串流（text／tool／reasoning／file part）、輸入框、權限請求提示、abort 控制；**標頭左側**為**連線狀態燈**（綠＝已連線／紅＝連線異常／灰＝未連接）與 session 選擇器（§2.2），**右側**為 agent／model 與文件切換鈕（**移除品牌「owx」與「已連線」狀態文字**）。
+- **目的**：承載一次對話的完整生命週期。顯示訊息串流（text／tool／reasoning／file part）、輸入框、權限請求提示、abort 控制；**標頭左側**為**連線狀態燈**（綠＝已連線／紅＝連線異常／灰＝未連接）；**右側**為 **session／agent／model 三個 icon 按鈕**（點擊開**下拉浮動選單**）與文件切換鈕（**移除品牌「owx」與「已連線」狀態文字**）；**三區（filetree／文件預覽／chat）標頭統一高度**（`--header-h`，以 filetree header 為基準）；**輸入區（Composer）容器 `padding: 0`、輸入框與容器重合（無邊框／圓角），送出改為內嵌 icon（右下角），最大化輸入空間**；**訊息區不顯示 user／assistant 角色標籤**，**user 泡泡**圓角縮小並帶**左側粗藍線**；**送出採 async**（`POST /session/:id/prompt_async`）＋既有 SSE 串流，避免經 Cloudflare 的同步逾時（524）；**訊息區顯示 assistant 的思考（reasoning，可摺疊）**，並以 `session.status`（busy／idle）顯示**進行中**指示；**model 下拉以 provider 為群組標題（藍色，models 縮排一階、群組間隔一行），且頂部有快速搜尋（逐字收斂，比對 model 名與 provider）**。
 - **核心行為**：送出 prompt（`prompt` 或 `prompt_async`）、串流渲染、工具呼叫可視化、權限 allow／deny、abort、context 壓縮提示。
 - **指令面板（CommandPalette）**：於 `Composer` 內以 `/` 觸發，列出**合併指令註冊表**（server 指令 + TUI 內建鏡射），支援過濾、鍵盤導覽與執行；不可用指令標示原因（FR-H-11）。
 - **對應 FR**：FR-H-1（TUI 與 Web UI 共用同一 server）、FR-D-1（session CRUD／messages／parts／abort）、FR-D-2（SSE 即時推送）、FR-D-10（非同步訊息）、FR-SUB-1（SSE 為即時狀態來源）、FR-SUB-2（權限請求可觀察）、FR-HAR-6（意圖閘門提示）、FR-HAR-7（todo 顯示）、FR-H-11（Web 指令面完整對齊 opencode）、FR-H-15（版面區域可收合／可調寬）。
@@ -105,7 +105,7 @@ flowchart LR
 
 - **目的**：列出 root session（時間降冪），支援開啟、切換、刪除、子 session 導覽。
 - **位置**：**移入 Chat 標頭**，以 `SessionMenu` 下拉呈現（**不再**置於側面板；側面板讓位給 Explorer／Outline，見 §3）。
-- **核心行為**：載入清單（`GET /session?directory=<worktree>&roots=true`）、開啟舊 session、刪除（`DELETE /session/:id`）、parent／child 切換。
+- **核心行為**：**依當前文件專案**載入清單（`GET /session?directory=<projectRoot>&roots=true`；**不抓全域 session**）、開啟舊 session、刪除（`DELETE /session/:id`）、parent／child 切換。
 - **對應 FR**：FR-D-1（session CRUD）、FR-D-11（子 session 與 diff／stats）、FR-A-10（子 session 導覽）、FR-CARRIER-7（回應側改寫 session 頂層 `directory`）。
 
 ### 2.3 專案檔案總管（Explorer）
@@ -315,10 +315,11 @@ SSE 斷線時，前端進入 `reconnecting`（見 §5.3），以指數退避重�
 | `message.created` | 插入 `MessageItem`（§2.1） | FR-D-2、FR-SUB-1 |
 | `message.updated` | 更新訊息狀態（完成／錯誤） | FR-D-2、FR-C-6 |
 | `part.created` | 插入 part（text／tool／reasoning／file） | FR-D-2、FR-SUB-1 |
-| `part.updated` | 增量更新 part（串流文字、工具狀態） | FR-D-2、FR-SUB-1 |
+| `part.updated` | 增量更新 part（串流**文字**與**思考 reasoning**、工具狀態） | FR-D-2、FR-SUB-1 |
 | `permission.asked` | 顯示 `PermissionPrompt`（阻塞） | FR-SUB-2 |
 | `permission.replied` | 關閉提示，更新工具狀態 | FR-SUB-2 |
 | `session.idle` | 結束串流，回到可輸入 | FR-D-1、FR-HAR-9 |
+| `session.status`（busy／idle） | 顯示／隱藏**進行中**指示 | FR-D-1、FR-D-2 |
 
 圖說：事件到達時以識別鍵（`session_id`／`message_id`／`part_id`）定位快取節點並增量更新；未知事件類別忽略，不報錯。
 
@@ -401,6 +402,7 @@ const OW_URL =
 | `/session/:id` | GET | 單一 session（頂層 `directory` 由 proxy 改寫） | FR-CARRIER-7 |
 | `/session/:id` | DELETE | 刪除 session | FR-D-1 |
 | `/session/:id/message` | POST | 送出 prompt | FR-D-1、FR-D-10 |
+| `/session/:id/prompt_async` | POST | 送出（**async**；即時回，結果由 SSE 串流；避免 Cloudflare 524） | FR-D-1、FR-D-10 |
 | `/session/:id/abort` | POST | 中止執行 | FR-D-1 |
 | `/session/:id/share` | POST | 建立分享連結 | FR-D-5 |
 | `/session/:id/share` | DELETE | 取消分享 | FR-D-5 |
@@ -564,7 +566,7 @@ const OW_URL =
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
-| 2026-10-19 | v1.9 | §1.2 IN 畫面清單**更新為現況**（含專案入口頁／多分頁／編輯器／NodeMenu／活動列與 Settings 選單）；§10 增 FR-H-26。 |
+| 2026-10-19 | v2.5 | model 下拉：provider 群組標題改**藍色**、models **縮排**、群組間隔；**頂部快速搜尋（逐字收斂）**。§2.1 更新。 |
 | 2026-10-19 | v0.3 | 改版為**文件優先 IDE**（[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）：§1.1 定位聲明改寫（移除「不是文件瀏覽器」）、§1.2 IN／OUT 改八畫面、§1.3 圖更新；§2 新增 Explorer（§2.3）／Outline（§2.4）／DocumentPreview（§2.5），session 清單移入 Chat 標頭（§2.2）；§3 元件樹改三區版面（ActivityBar／FileExplorer／DocumentOutline／DocumentPreview／SessionMenu）；§7.1 補 `GET /file`、`GET /file/content` 並更新 `GET /project`；§8 增 Explorer／Outline／DocumentPreview 狀態欄；§10 增依據；§11 增檔案樹／大綱／預覽缺口（FR-H-12／13／14）。 |
 | 2026-10-18 | v0.2 | 新增 CommandPalette（§2.1 指令面板、§3 元件樹、§4.1 衍生資料註記）；§7.1 補 share／unshare／rename／fork／summarize／revert／unrevert／diff／provider-auth／config／app 端點；§8 增指令面板狀態欄；§10 增依據；§11 增內建目錄手動同步缺口（FR-H-11）。 |
 | 2026-10-17 | v0.1 | 初版：前端定位與關聯、五畫面清單、元件樹、狀態管理、SSE 綁定與連線生命週期、iframe 嵌入契約、與載體層介面、載入／錯誤／空／權限狀態、無障礙、依據 ID。 |

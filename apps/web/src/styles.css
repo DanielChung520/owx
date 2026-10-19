@@ -11,6 +11,7 @@
   --git-add: #1a7f37;
   --git-del: #cf222e;
   --git-ren: #0969da;
+  --header-h: 36px;
   --radius: 10px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", "PingFang TC", "Microsoft JhengHei", sans-serif;
@@ -112,10 +113,11 @@ body {
 
 .header {
   flex: 0 0 auto;
+  height: var(--header-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -254,13 +256,8 @@ body {
   gap: 16px;
 }
 
-.msg .role {
-  font-size: 12px;
-  color: var(--fg-muted);
-}
-
 .msg p {
-  margin: 4px 0 0;
+  margin: 0;
   line-height: 1.55;
   white-space: pre-wrap;
 }
@@ -268,8 +265,56 @@ body {
 .msg-user p {
   display: inline-block;
   background: var(--surface);
-  padding: 10px 12px;
-  border-radius: var(--radius);
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 3px solid var(--accent);
+}
+
+.reasoning {
+  margin: 0 0 6px;
+}
+
+.reasoning summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.reasoning-body {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.msg.busy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.busy-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: busy-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes busy-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .composer-wrap {
@@ -308,37 +353,42 @@ body {
 }
 
 .composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
+  position: relative;
+  padding: 0;
+  margin: 0;
 }
 
-.composer textarea {
-  flex: 1;
+.composer-input {
+  display: block;
+  width: 100%;
+  min-height: 72px;
+  max-height: 42vh;
   resize: none;
   background: var(--bg-deep);
   color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 12px;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 44px 10px 12px;
   font: inherit;
-  max-width: 760px;
-  margin-left: auto;
 }
 
-.composer button {
+.composer-send {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
   background: var(--accent);
   color: #fff;
-  border: 0;
-  border-radius: var(--radius);
-  padding: 0 16px;
-  font: inherit;
   cursor: pointer;
-  margin-right: auto;
 }
 
-.composer button:disabled {
+.composer-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -525,7 +575,12 @@ body {
 }
 
 .panel-header {
-  padding: 8px 10px;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -696,10 +751,11 @@ body {
 
 .doc-tabs {
   flex: 0 0 auto;
+  height: var(--header-h);
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 2px;
-  padding: 4px 6px 0;
+  padding: 0 6px;
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
 }
@@ -714,8 +770,9 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
+  height: 100%;
   max-width: 200px;
-  padding: 6px 8px;
+  padding: 0 8px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
@@ -1052,6 +1109,56 @@ body {
 
 .menu-item:hover {
   background: var(--surface);
+}
+
+.menu-item.active {
+  color: var(--accent);
+}
+
+.dropdown {
+  display: inline-flex;
+}
+
+.dropdown-menu {
+  min-width: 220px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.dropdown-empty {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.dropdown-search {
+  width: calc(100% - 12px);
+  margin: 4px 6px 2px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-deep);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+}
+
+.dropdown-group {
+  margin-top: 8px;
+  padding: 4px 10px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dropdown-menu .menu-item.grouped {
+  padding-left: 20px;
+}
+
+.icon-btn.active {
+  color: var(--accent);
 }
 
 .project-form {
