@@ -529,6 +529,28 @@ body {
   border-right: 1px solid var(--border);
 }
 
+.activitybar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-logo {
+  padding: 4px;
+  color: var(--fg);
+}
+
+.activity-logo img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
 .activity {
   display: grid;
   place-items: center;

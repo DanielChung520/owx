@@ -108,6 +108,16 @@ export function ActivityBar({
 }): JSX.Element {
   return (
     <nav className="activitybar" aria-label="活動列">
+      <div className="activitybar-top">
+        <button
+          type="button"
+          className="activity activity-logo"
+          aria-label="owx"
+          title="owx"
+        >
+          <img src="/owx-logo.svg" alt="owx logo" />
+        </button>
+      </div>
       <button
         type="button"
         className={`activity${active === "explorer" && !collapsed ? " active" : ""}`}
