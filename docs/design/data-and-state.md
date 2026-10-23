@@ -259,6 +259,30 @@ owx 依賴的事件類別（介面面，非完整清單）：
 
 ---
 
+### 2.9 project-metadata（owx 自建，Harness）
+
+`.owx-project.json`（位於 `~/knowledge/<slug>/`）；由 `POST /rpc/project/create` 建立、`POST /rpc/project/update` 更新。
+
+| 欄位 | 型別 | 說明 |
+|---|---|---|
+| `id` | string | 系統生成編號（**不可變**） |
+| `name` / `name_en` | string / string? | 顯示名（中／英） |
+| `slug` | string | 目錄名（**不可變**） |
+| `tags` | string[] | 標籤 |
+| `created` | number | epoch ms |
+| `properties` | string[] | 專案屬性（相容群組；Phase 1 單選） |
+| `base_dirs` | `{ sample_ref?, enabled, dirs[] }` | 基礎目錄（來源 `owx-sample`） |
+| `writing_standard` | `{ versioning, require_title, require_revision, require_change_log, confidentiality_default, compliance[], submit_checks{consistency,objectivity,audit} }` | 文件撰寫規範 |
+| `params` | `{ show_hidden, autosave_minutes }` | 參數（專案層） |
+
+不變量：`id`／`slug`／`created` **不可**由 patch 變更；寫入為**原子**（暫存＋rename）；未知欄位忽略（向前相容）。
+
+### 2.10 standards-catalog（owx 自建，`owx-Standard.json`）
+
+規範目錄：`{ categories:[{ id, name, required?, standards:[{ id, name, title?, issuer?, year?, required?, license, full_text_allowed, acquisition, source_url? }] }] }`。**僅識別資料**（NFR-22，不得收錄標準原文）；缺檔 → `{ categories: [] }`。抄錄產物落於 `<專案>/standards/<id>.md`（僅識別資料＋引導）。
+
+---
+
 ## 3. 狀態機
 
 ### 3.1 session lifecycle（opencode 既有）
@@ -399,4 +423,5 @@ stateDiagram-v2
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-20 | v0.2 | 新增 §2.9 `project-metadata`（`.owx-project.json` 擴充欄位與不變量）與 §2.10 `standards-catalog`（`owx-Standard.json`，僅識別資料）；對齊 [`ADR-0011`](../adr/ADR-0011-project-metadata-and-standards-catalog.md) 與 [`project-properties-requirements.md`](../spec/project-properties-requirements.md)（FR-H-33～55）。 |
 | 2026-10-17 | v0.1 | 初版：八實體資料模型（ER + 欄位表）、五組狀態機（session／delegation／model fallback／task-continuation／doc-status）、所有權與追溯對映。 |

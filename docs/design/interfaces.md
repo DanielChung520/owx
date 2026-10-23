@@ -1,6 +1,6 @@
 # owx L3 設計：介面契約（interfaces.md）
 
-> 版本：v0.7　|　日期：2026-10-19　|　狀態：Draft
+> 版本：v0.9　|　日期：2026-10-20　|　狀態：Draft
 > 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0001`](../adr/ADR-0001-substrate-opencode-cleanroom-omo.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`ADR-0004`](../adr/ADR-0004-harness-opencode-boundary.md)、[`document-standards.md`](../standards/document-standards.md)、[`coding-standards.md`](../standards/coding-standards.md)，以及載體 repo `opencode-web` 之規格（`docs/mcp.md`）。
 
 ---
@@ -383,6 +383,96 @@ sequenceDiagram
 > **資源上限**：本節與 §2.6 之上傳／封裝預設 **50MB**（env `OWX_MAX_UPLOAD_BYTES`，可調）。
 
 > **狀態**：本節為**規劃中**契約；Notion／filer 未設置時以 `501 not_configured` 佔位（**不假造成功**）。
+
+---
+
+### 2.8 harness 管理 RPC（前端 → sidecar）：設定（settings）
+
+> **來源需求**：FR-H-27、FR-H-28。**決策依據**：[`ADR-0012`](../adr/ADR-0012-settings-persistence-in-harness-config.md)。
+
+前端（React）經 sidecar 讀寫 **owx 自有設定**；持久化於 **`<config_dir>/settings.json`**（`config_dir` 解析序：`OWX_CONFIG_DIR` → `$XDG_CONFIG_HOME/owx` → `$HOME/.config/owx`）。設定形狀（camelCase）：
+
+| 欄位 | 型別 | 說明 |
+|---|---|---|
+| `global.systemName` | string | 系統顯示名稱（預設 `"owx"`） |
+| `global.knowledgeRoot` | string \| null | 知識根目錄覆寫（`null`＝沿用 `OWX_KNOWLEDGE_DIR`） |
+| `global.logo` | string \| null | Logo 檔名（位於 config dir） |
+| `global.accent` | string \| null | 品牌主色（`#rrggbb`） |
+| `global.defaultProviderId` | string \| null | 預設 provider（新 session） |
+| `global.defaultModelId` | string \| null | 預設 model（新 session） |
+| `global.defaultAgent` | string \| null | 預設 agent（新 session） |
+| `personal.theme` | `"system"` \| `"light"` \| `"dark"` | 主題 |
+
+#### `GET /rpc/settings`
+
+- **請求**：（無 body）
+- **回應**（200）：完整設定物件；檔案不存在或無法解析時回**預設值**（永不 panic）。
+
+#### `POST /rpc/settings`
+
+- **請求**：完整設定物件（前端送完整狀態）。
+- **回應**（200）：寫入後之設定。
+- **錯誤**：`400 {error:"invalid_settings", detail}`（`accent` 非 `^#[0-9a-fA-F]{6}$`）／`500 {error:"write_failed"}`。
+- **語意**：驗證後**覆寫**整份設定檔（pretty JSON）。**未知鍵刻意忽略**（向前相容；與 FR-F-1 之嚴格分層設定刻意不同）。
+
+#### `POST /rpc/settings/logo`
+
+- **請求**：`{ dataBase64: string, ext: "png" | "jpg" | "jpeg" | "svg" | "webp" }`（解碼後 ≤ **2MB**）
+- **回應**（200）：`{ logo: string }`（檔名，如 `"logo.png"`）
+- **錯誤**：`400 invalid_image`（副檔名不支援或 base64 解碼失敗）／`413 too_large`／`500 write_failed`
+- **語意**：寫入 `<config_dir>/logo.<ext>`，並更新 `global.logo`。
+
+#### `GET /rpc/settings/logo`
+
+- **請求**：（無 body）
+- **回應**（200）：Logo 原始 bytes；`Content-Type` 依副檔名（png→`image/png`、jpg／jpeg→`image/jpeg`、svg→`image/svg+xml`、webp→`image/webp`）。
+- **錯誤**：`404 {error:"not_found"}`（未設定或檔案不存在）
+
+#### `GET /rpc/models`（模型目錄）
+
+- **請求**：（無 body）
+- **回應**（200）：`{ source: string, providers: [{ id, name, models: [{ id, name }] }] }`——`source` 為 opencode 預設 registry URL（`OPENCODE_MODELS_URL`，預設 `https://models.opencode.ai`）。
+- **錯誤**：`502 {error:"models_unavailable"}`（registry 檔不存在）／`502 {error:"models_invalid"}`（無法解析）
+- **語意**：讀取 opencode 就其預設 URL 維護之 registry（解析序 `OPENCODE_MODELS_PATH` → `$XDG_CACHE_HOME/opencode/models.json` → `$HOME/.cache/opencode/models.json`）；供「模型下載清單」（FR-H-31）。
+
+> **Provider 連線（FR-H-32）走 substrate opencode API**（非 harness）：`PUT /auth/{id}`（body `{type:"api",key}`）、`DELETE /auth/{id}`、`GET /provider`、`PATCH /global/config`（`provider.<id>.options.baseURL`）。前端經載體／dev proxy（新增 `/auth` 前綴）直呼 opencode。
+
+> **知識根目錄覆寫**：`global.knowledgeRoot`（非空）覆寫 `OWX_KNOWLEDGE_DIR`（預設 `~/knowledge`），供 `GET /rpc/knowledge/list`（§2.6）與 `POST /rpc/project/create`（§2.5）。
+
+> **安全（go-live）**：`/rpc` 目前經前端（公開網域）可達；上線前須加 **bearer／存取控制**（`AGENTS.md` §10 go-live）。
+
+### 2.9 harness 管理 RPC（前端 → sidecar）：專案屬性設定
+
+> **來源需求**：FR-H-33～55。**決策依據**：[`ADR-0011`](../adr/ADR-0011-project-metadata-and-standards-catalog.md)。規格：[`project-properties-requirements.md`](../spec/project-properties-requirements.md)。
+
+#### `GET /rpc/project/get`
+
+- **請求**：query `directory`（絕對路徑，須落於 `OWX_KNOWLEDGE_DIR` 之下）。
+- **回應**（200）：`.owx-project.json` 內容，缺欄以預設補齊；含 `name_en`／`properties[]`／`base_dirs`／`writing_standard`／`params`，並回 `worktree`。
+- **錯誤**：`400 invalid_directory`／`400 outside_worktree`。
+
+#### `POST /rpc/project/update`
+
+- **請求**：`{ directory, patch }`（`patch` 為部分物件，deep-merge）；`id`／`slug`／`created` **不可**由 patch 變更。
+- **回應**（200）：更新後中繼資料，含 `applied: { base_dirs: string[], compliance_copied: string[] }`。
+- **副作用**：`base_dirs.enabled` 為真 → **冪等**建立子目錄；`writing_standard.compliance[]` → 自 `owx-sample/standards/<id>.md` **抄錄**入 `<專案>/standards/<id>.md`（冪等、僅識別資料）。
+- **錯誤**：`400 invalid_patch`／`400 invalid_name`／`400 invalid_property`／`400 invalid_confidentiality`／`400 invalid_autosave`／`400 outside_worktree`。
+
+#### `GET /rpc/project/base-dirs`
+
+- **回應**（200）：`{ base_dirs: { <屬性>: { sample_ref, dirs[] } }, properties: string[] }`；`dirs` 來自 `owx-sample/base-dirs/<sample_ref>.json`，缺檔以內建預設。
+
+#### `GET /rpc/standards/list`
+
+- **回應**（200）：規範目錄 `{ categories: [...] }`（`owx-Standard.json`；**僅識別資料**）。缺檔／格式錯誤 → `{ categories: [] }`（降級）。
+
+#### `GET /rpc/standards/get`
+
+- **請求**：query `id`（標準 id，如 `ISO-27001`；不得含路徑分隔或 `..`）。
+- **回應**（200）：`{ id, content }`（`owx-sample/standards/<id>.md` 之內容；**自撰**文件，非標準原文）。
+- **錯誤**：`400 invalid_id`／`404 not_found`。
+
+> **安全（go-live）**：同 §2.5，`/rpc` 上線前須加 bearer／存取控制。
 
 ---
 
@@ -791,6 +881,8 @@ pub struct ErrorPayload {
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-20 | v0.9 | §2.8 增 `GET /rpc/models`（模型目錄；讀 opencode 預設 registry）與 **Provider 連線走 substrate opencode API** 註記（`PUT/DELETE /auth/{id}`、`GET /provider`、`PATCH /global/config`）。對齊 FR-H-31／FR-H-32。 |
+| 2026-10-20 | v0.8 | 新增 **§2.8 harness 管理 RPC：設定（settings）**（`GET/POST /rpc/settings`、`POST/GET /rpc/settings/logo`；設定物件、錯誤、`knowledgeRoot` 覆寫；未知鍵向前相容）。依 [`ADR-0012`](../adr/ADR-0012-settings-persistence-in-harness-config.md)。 |
 | 2026-10-19 | v0.7 | §2.6 增 `POST /rpc/git/commit`（提交全部變更；供「文件全部提交」）。 |
 | 2026-10-19 | v0.4 | 新增 **§2.7 harness 管理 RPC：文件匯入／轉換／匯出／分享（規劃中）**（`/rpc/import/file`、`/rpc/import/notion`、`/rpc/convert`、`/rpc/export/filer`、`/rpc/export/notion`、`/rpc/share`；含 `501 not_configured` 佔位）。依 [`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)。 |
 | 2026-10-19 | v0.3 | 新增 **§2.6 harness 管理 RPC：檔案樹節點操作**（`/rpc/fs/mkdir`、`/rpc/fs/write`、`/rpc/archive/create`、`/rpc/archive/extract` 契約、共同安全邊界、錯誤、go-live 註記）。依 [`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)。 |

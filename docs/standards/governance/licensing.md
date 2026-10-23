@@ -1,6 +1,6 @@
 # owx 授權治理（governance/licensing.md）
 
-> 版本：v0.2　|　日期：2026-10-18　|　狀態：Draft
+> 版本：v0.3　|　日期：2026-10-23　|　狀態：Draft
 > **優先序：本檔僅次於 `AGENTS.md` §2，高於其他規範。**
 > 背景：owx 的用途是**為企業導入 AI**——交付物**不得含非正式授權程式碼**。這不是偏好，是硬性驗收條件。
 
@@ -83,6 +83,17 @@ owx 的 harness 是 **clean-room** 自建，omo 僅作**需求來源**。
                   → 不可交付？ → 找替代或走 clean-room（§3）
 ```
 
+### 5.1 傳遞依賴（transitive）含不可交付授權時
+
+審查須看**整棵依賴樹**，不只看直接依賴（`pnpm licenses list --prod`）。若某直接依賴（MIT）帶入不可交付授權的**傳遞依賴**，處置順序：
+
+1. **該傳遞依賴是否為必要功能？** 若僅供**選用**功能（lazy／optional path），以 `pnpm.overrides` 換成**本地 MIT stub**（repo 內 `packages/*-stub`），並在 stub 內以錯誤訊息明示不可用；交付物即不含該授權碼。
+2. 若為核心功能 → **換套件**（不可 stub），或走 clean-room。
+3. 於 §2 元件清單與 PR body 記錄「被替換的套件、授權、stub 路徑、受影響功能」。
+4. **不可**以「放寬閘門 allowlist」方式放行；若套件 `package.json` 缺 `license` 欄位但確實隨附寬鬆授權（如 MIT LICENSE 檔），閘門應**回讀 LICENSE 檔判定**並印出 `VERIFIED`，而非靜默放行。
+
+> 首例（2026-10-23）：`mermaid`（MIT）→ `elkjs`（**EPL-2.0**）僅供 `layout: elk`，已由 `packages/elkjs-stub`（MIT）取代；一般圖表（dagre）不受影響。
+
 ---
 
 ## 6. 可交付清單產出（未來）
@@ -97,5 +108,6 @@ owx 的 harness 是 **clean-room** 自建，omo 僅作**需求來源**。
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-23 | v0.3 | 新增 **§5.1 傳遞依賴含不可交付授權**之處理：以 `pnpm.overrides` 換本地 MIT stub（首例 `mermaid`→`elkjs` EPL-2.0，`layout: elk` 不可用）；閘門對缺 `license` 欄位者**回讀 LICENSE 檔**判定（`VERIFIED`），不放寬 allowlist。 |
 | 2026-10-18 | v0.2 | §2 新增 opencode 指令面 metadata 鏡射（MIT，允許；僅名稱／描述／來源，不含原始碼）並重申 omo 非指令面來源（FR-H-11）。 |
 | 2026-10-17 | v0.1 | 初版：定義授權分級、元件授權清單、omo clean-room 流程（允許/禁止/最安全姿勢/已知限制）、紅線清單、PR 閘門、可交付清單。 |

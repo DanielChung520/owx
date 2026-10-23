@@ -369,6 +369,14 @@ owx 的測試風格與隔離手法，**沿用載體 repo `opencode-web` 既有�
 | FR-H-25 | TC-H-25b | contract | `POST /rpc/git/commit` 契約（`committed`／`nothing_to_commit`） |
 | FR-H-26 | TC-H-26a | component | ActivityBar 切換（Explorer／Outline／Knowledge Graph）＋ Settings 浮動選單與快捷鍵 |
 | FR-H-26 | TC-H-26b | contract | 技能 `GET /api/skill`、檢查版本 `GET /app`（其餘佔位） |
+| FR-H-33～35 | TC-H-33 | component | `ProjectPropertyModal` 四 tab（shell）＋載入；`ProjectMenu` 入口與分割線 |
+| FR-H-36～40 | TC-H-36 | component/unit | 基本資料（ID 唯讀／屬性單選／`parseTags` 去重）；`GET /rpc/project/get` 補預設 |
+| FR-H-41～43 | TC-H-41 | component/contract | 基礎目錄對照（`/rpc/project/base-dirs`）與生成 checkbox |
+| FR-H-44～46 | TC-H-44 | unit | `.owx-project.json` 原子寫入與 round-trip（Rust） |
+| FR-H-47～48 | TC-H-47 | contract | `GET /rpc/standards/list`（缺檔降級為空） |
+| FR-H-49～51 | TC-H-49 | unit | `POST /rpc/project/update` 冪等生成目錄／抄錄規範（Rust） |
+| FR-H-52～55 | TC-H-52 | unit/contract | patch 驗證（`invalid_property`／`invalid_autosave`）＋ api 函式契約 |
+| FR-H-56 | TC-H-56 | contract/component | `GET /rpc/standards/get`（含 `invalid_id`／`not_found`）＋ `StandardsModal` shell |
 
 ### 3.10 FR-I｜部署與多租戶
 
@@ -679,6 +687,8 @@ flowchart LR
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-20 | v1.3 | 新增 FR-H-56（標準規範瀏覽）之 `TC-H-56`；web 84 綠、Rust 綠。 |
+| 2026-10-20 | v1.2 | 新增專案屬性設定（FR-H-33～55）之 TC 對映（`TC-H-31/34/39/42/45/47/50`）；Rust 19 綠、web 75 綠。對齊 [`ADR-0011`](../adr/ADR-0011-project-metadata-and-standards-catalog.md)。 |
 | 2026-10-19 | v1.1 | 新增 FR-H-26 之 TC 對映（`TC-H-26a/b`）；§3 增子 ID 慣例說明；§3.1 群組摘要 FR-H 更新為 26 FR／50 TC、合計 173 FR／197 TC。 |
 | 2026-10-19 | v0.3 | 新增 FR-H-12／13／14 之 TC 對映（`TC-H-12a/b/c`、`TC-H-13a/b`、`TC-H-14a/b`）；§3 增子 ID 慣例說明；§3.1 群組摘要 FR-H 更新為 14 FR／20 TC、合計 161 FR／167 TC；§8.1 元件測試範圍補 FileExplorer／DocumentOutline／DocumentPreview。 |
 | 2026-10-18 | v0.2 | 新增 FR-H-11 之 TC 對映（`TC-H-11a` unit／`TC-H-11b` component／`TC-H-11c` contract）；§3.1 群組摘要 FR-H 更新為 11 FR／13 TC、合計 158 FR／160 TC；§8.1 元件測試範圍補指令面板。 |

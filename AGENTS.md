@@ -64,6 +64,28 @@ flowchart LR
 - 任何新增依賴（npm/cargo）須在 PR body 標明**授權**並確認可交付。
 - 詳細流程見 [`docs/standards/governance/licensing.md`](docs/standards/governance/licensing.md)。
 
+### omo 使用策略（2026-10-22 決策）
+
+> 目標：**owx 的 omo 專用化，不影響其他專案在用的 opencode omo**；長期產品化以**自有 omo 全新開發**為終局。
+
+**方案 A（現行，第一期）——owx 專用 omo（XDG 隔離 + vendored 副本）**：
+- owx 專用環境以 **XDG 目錄隔離**（`XDG_CONFIG_HOME`/`XDG_STATE_HOME`/`XDG_CACHE_HOME` 指向 `~/.owx/env/`），使 opencode **完全看不到全域 `~/.config/opencode`**；啟動器：`~/.owx/owx-env.sh`。
+- 專用 `~/.owx/env/config/opencode/opencode.json` 宣告**本地 omo plugin**（`file://~/.owx/omo/…/index.js`，含全部依賴的 vendored 副本），**不載入**全域 npm 版。
+- owx 專案 `.omo/omo.jsonc`（project scope）覆寫 agent 顯示名稱（如 `sisyphus → owx`）與 prompt；**只影響 owx**，其他專案零影響。
+- ⚠️ **授權**：omo 副本位於 **repo 外**（`~/.owx/omo/`），SUL-1.0 僅限**內部/個人使用**（SUL 授權允許複製＋修改），**不進 repo／交付物**；修改副本時保留「已修改」聲明。owx repo 內僅含**自有**設定檔（`.omo/omo.jsonc`）。
+- ⚠️ **功能限制**：v1.18.35 之 opencode **不支援**專案層級停用全域 plugin（`-` 前綴為 v2 語法）；`OPENCODE_CONFIG_DIR` 亦無法排除全域 plugin——故「不動全域」唯一可行即上述 XDG 隔離。
+
+**owx 專用環境的設定同步（2026-10-22 已實作）**：
+- `~/.owx/env/config/opencode/opencode.json` 除本地 omo plugin 外，亦含 **dllm provider、pcm／notion MCP、skills paths**（複製自全域）。
+- `~/.owx/env/config/opencode/skills/`（28 個 arkcli-*／測試／需求）與 `plugins/hermes.js`（含 `@opencode-ai/plugin` 依賴）複製自全域。
+- `~/.owx/env/state/opencode/auth.json`（8 個 provider 憑證）複製自 `~/.local/share/opencode/auth.json`。
+- ⚠️ **維護注意**：上述設定含 **API key／token**（dllm、pcm、notion、nvidia 等），**不進版控**；日後更換任一 provider 憑證須**同步更新兩邊**（全域 + owx 專用）。
+
+**方案 C（終局）——自有 omo 全新開發（clean-room）**：
+- 長遠以 owx **自有程式**重做 omo 之能力（委派編排、categories、紀律、model router 等），不依賴 omo 本體（SUL 不得進交付物）。
+- 路徑：`omo 公開行為 → 自寫功能規格（docs/spec/）→ 自有 Rust/React 實作`；omo 本體僅作**需求標的與行為對照**，不抄原始碼/prompt/skill 文字。
+- 方案 A 的 vendored 副本即為 clean-room 之**行為參考標的**（僅本機、不散布）。
+
 ---
 
 ## 3. 架構（三層 + 微服務）
@@ -168,7 +190,9 @@ owx/
 │   └── adr/                  # 架構決策記錄
 ├── crates/                   # Rust harness（owx-core / owx-boundary / owx-harnessd）
 ├── packages/                 # TypeScript（opencode-plugin-owx shim）
-└── apps/web/                 # React 前端（Vite）
+├── apps/web/                 # React 前端（Vite）
+├── owx-sample/               # 標準／範本庫（owx-Standard.json + standards/；種子，部署至 OWX_SAMPLE_DIR）
+└── scripts/                  # 閘門與工具（clean-room／license／doc-link／sbom／gen-standards）
 ```
 > 規則：子目錄複雜度達門檻才增設子 `AGENTS.md`，子檔不得重複本檔內容。
 
@@ -190,6 +214,18 @@ pnpm install
 pnpm -r typecheck
 pnpm -r build
 ```
+
+```bash
+# Harness sidecar（loopback；前端 /rpc/* 經 dev proxy 轉此，見 apps/web/vite.config.ts）
+cargo build -p owx-harnessd
+cargo run -p owx-harnessd            # 127.0.0.1:13110（OWX_HARNESS_PORT）
+
+# （dev）指向 repo 樣本庫，讓「依循規範／基礎目錄」有資料
+OWX_SAMPLE_DIR="$PWD/owx-sample" cargo run -p owx-harnessd
+```
+
+> **harness 環境變數**：`OWX_HARNESS_PORT`（預設 13110）、`OWX_KNOWLEDGE_DIR`（預設 `~/knowledge`）、`OWX_SAMPLE_DIR`（預設 `~/owx-sample`）、`OWX_STANDARD_FILE`（預設 `$OWX_SAMPLE_DIR/owx-Standard.json`）、`OWX_CONFIG_DIR`、`OWX_OPENCODE_URL`。
+> **⚠️ 新增／修改 `/rpc/*` 路由後須「重建並重啟」harness**（`cargo build -p owx-harnessd` → 重啟行程）；否則前端對新路由會回 **404**（跑的是舊 binary）。
 
 > 目前為 **step② 完成**：9 個 Rust crate（`owx-*`）、`opencode-plugin-owx` shim、`apps/web`、閘門（clean-room/license/doc-link/SBOM）與 CI 已建；決策全數定案（見 §9）。
 
@@ -243,6 +279,9 @@ pnpm -r build
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-22 | v0.9 | §2 增 **omo 使用策略（方案 A／C）**：owx 專用 omo 以 **XDG 隔離 + vendored 副本**（`~/.owx/`）達成「不影響其他專案」；長期以**自有 omo 全新開發（clean-room）**為終局。同步 owx 專用環境設定（dllm／MCP／skills／auth）。 |
+| 2026-10-20 | v0.8 | §8 補 **harness sidecar 啟動指令與環境變數**（`OWX_HARNESS_PORT`／`OWX_KNOWLEDGE_DIR`／`OWX_SAMPLE_DIR`／`OWX_STANDARD_FILE`），並註明**改 `/rpc/*` 路由後須重建＋重啟**（否則 404）。 |
+| 2026-10-20 | v0.7 | §7 目錄結構補 **`owx-sample/`**（標準／範本庫種子）與 **`scripts/`**；同步「專案屬性設定」規格與規範目錄（[`ADR-0011`](docs/adr/ADR-0011-project-metadata-and-standards-catalog.md)）。 |
 | 2026-10-17 | v0.6 | §10 佈局調整：**前端 UI 移至 13100（公開）**、harness sidecar 移至 `13110`（內網，不對外）、opencode 13001；`owx.aiconn.ai → 13100`（前端）。 |
 | 2026-10-17 | v0.5 | §10 增「上線前待調整（go-live TODO）」：存取控制、入口決策、sidecar 驗證、Node ≥22、SBOM——先附記、部署時處理。 |
 | 2026-10-17 | v0.4 | 新增 §10「對外存取（Cloudflare Tunnel）」：`owx.aiconn.ai → 127.0.0.1:13100`，remote-managed tunnel 之 dashboard 設定步驟與安全警示；§8 現況更新為 step② 完成。 |

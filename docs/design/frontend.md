@@ -1,6 +1,6 @@
 # owx L3 設計：前端（frontend.md）
 
-> 版本：v2.5　|　日期：2026-10-19　|　狀態：Draft
+> 版本：v2.13　|　日期：2026-10-23　|　狀態：Draft
 > 來源：整合自 [`base-core-requirements.md`](../spec/base-core-requirements.md)、[`functional-spec.md`](../spec/functional-spec.md)、[`ADR-0003`](../adr/ADR-0003-harness-rust-core-react-frontend.md)、[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)、[`document-standards.md`](../standards/document-standards.md)，以及載體 repo `opencode-web` 之規格（`README.md`、`docs/spec/ow-document-access.md`、`docs/mcp.md`）。
 
 ---
@@ -111,8 +111,8 @@ flowchart LR
 ### 2.3 專案檔案總管（Explorer）
 
 - **目的**：以**專案檔案樹**瀏覽當前專案，供使用者定位與開啟文件。
-- **核心行為**：**標頭顯示「專案名稱 `[目錄名]`」**（名稱取 `~/knowledge` 專案中繼資料，副檔名/slug 於方括號）＋ `ProjectMenu`；**延遲載入**的目錄樹（`GET /file?path=<dir>&directory=<root>`，entries 為 `{name,path,absolute,type,ignored}`）；展開／收合目錄、忽略項（`ignored`）標示；**每個節點顯示目錄／檔案類型圖示（帶顏色）**，**有變更的檔案以文字顏色區隔**（來源 **owx harness** `GET /rpc/git/status`）；預設／初始專案＝**當前作用中專案**，可設定，初始為 **owx**。
-- **對應 FR**：FR-H-12（專案檔案總管）、FR-CARRIER-7（`/project` 回應側改寫）。
+- **核心行為**：**標頭顯示「專案名稱 `[目錄名]`」**（名稱取 `~/knowledge` 專案中繼資料，副檔名/slug 於方括號）＋ `ProjectMenu`（開啟／新增／關閉／**專案屬性設定**）；**延遲載入**的目錄樹（`GET /file?path=<dir>&directory=<root>`，entries 為 `{name,path,absolute,type,ignored}`）；展開／收合目錄、忽略項（`ignored`）標示；**每個節點顯示目錄／檔案類型圖示（帶顏色）**，**有變更的檔案以文字顏色區隔**（來源 **owx harness** `GET /rpc/git/status`）；**隱藏項目（`.` 開頭）預設不列出**，僅當專案 `params.show_hidden=true` 時顯示（過濾於前端 `lib/hidden.ts`，substrate `GET /file` 未改）；預設／初始專案＝**當前作用中專案**，可設定，初始為 **owx**。
+- **對應 FR**：FR-H-12（專案檔案總管）、FR-H-58（顯示隱藏檔案）、FR-CARRIER-7（`/project` 回應側改寫）。
 
 ### 2.4 文件大綱（Outline）
 
@@ -123,7 +123,9 @@ flowchart LR
 ### 2.5 文件預覽（DocumentPreview）
 
 - **目的**：呈現當前文件的渲染結果，供閱讀與對照。
-- **核心行為**：**client 端**多格式渲染——**markdown**（`react-markdown`，含標題錨點供 §2.4 捲動、**Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**文件預覽為多分頁**（可同時開啟多檔、切換、單頁 `×` 關閉）；分頁列右側「⋯」浮動選單——**關閉全部文件／文件全部提交／搜尋**（FR-H-25）。**僅 `md` 可編輯**（§2.12 編輯器），其餘唯讀。
+- **核心行為**：**client 端**多格式渲染——**markdown**（`react-markdown`＋**GFM**：表格、任務清單、刪除線、自動連結、腳註；含標題錨點供 §2.4 捲動、**Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**文件預覽為多分頁**（可同時開啟多檔、切換、單頁 `×` 關閉）；分頁列右側「⋯」浮動選單——**關閉全部文件／文件全部提交／搜尋**（FR-H-25）。**僅 `md` 可編輯**（§2.12 編輯器），其餘唯讀。
+- **渲染器**：`MarkdownView`（`components/MarkdownView.tsx`）為**唯一** markdown 渲染入口——`remark-gfm` 擴充語法、標題產生 `slugify` 錨點（供 §2.4）、表格外包 `.md-table` 以橫向捲動、```mermaid 圍籬交由 `MermaidBlock` 以**動態 `import("mermaid")`** 渲染（`securityLevel: "strict"`；未就緒顯示原始碼、失敗顯示錯誤＋原始碼，不中斷預覽）。預覽、§2.12 編輯器並排、§2.7 標準規範皆共用。
+- **Mermaid layout 限制（授權）**：`mermaid` 之 `elkjs` 依賴為 **EPL-2.0**，依 [`licensing.md`](../standards/governance/licensing.md) §5.1 以 `packages/elkjs-stub`（MIT）取代——**預設 dagre layout 正常**，`layout: elk` 圖表降級為錯誤訊息；交付物不含 EPL 碼。
 - **對應 FR**：FR-H-14（文件預覽）、FR-CARRIER-10（文件狀態聚合）。
 
 ### 2.6 檔案／文件選擇器（# 統一選擇器）
@@ -134,9 +136,9 @@ flowchart LR
 
 ### 2.7 設定／profile（settings / profile）
 
-- **目的**：顯示當前 profile 的隔離狀態（五根路徑）、模型選擇、主題（深淺）、權限設定檢視。
-- **核心行為**：讀取 profile 狀態、切換模型（寫入 state 根）、切換主題（`opencode_get_theme`／`set_theme`）、顯示 provider 可用性。
-- **對應 FR**：FR-CARRIER-1（五根隔離可觀察）、FR-CARRIER-4（路徑解析只讀 profile）、FR-E-4（per-agent／per-category 模型）、FR-H-8（主題與鍵綁）、FR-CARRIER-13（MCP `get_theme`／`set_theme`）。
+- **目的**：以 **設定 modal** 呈現 owx 系統／UI 設定與（未來）profile 隔離狀態；顯示當前 profile 的隔離狀態（五根路徑）、模型選擇、主題（深淺）、權限設定檢視。
+- **核心行為**：ActivityBar 底部 Settings 浮動選單之「**系統設置[S]**」開啟**系統設置 modal**（`.settings-modal`：`80vw`×`80vh`、上限 `1792×1120`）；內含三分頁**一般**／**外觀**／**模型**。另 Settings 選單之「**功能維護[F]**」「**賬號維護[A]**」各開**同尺寸佔位 modal**（`.settings-modal`；未實作）。**一般**：系統名稱、知識根目錄；**外觀**：Logo（上傳）、品牌主色、主題（**深／淺／隨系統**）；**模型**：預設 provider／model／agent、**模型下載清單**（FR-H-31）、**Provider 連線**（FR-H-32）。讀寫經 owx harness（`GET/POST /rpc/settings`、`POST/GET /rpc/settings/logo`）。**生效**：`personal.theme`→`:root` 之 `data-theme`（`system` 時移除屬性跟隨系統）；`global.accent`→CSS 變數 `--accent`；`global.systemName`→`document.title` 與品牌；`global.logo`→品牌圖示；預設 provider／model／agent 套用於**新 session**。
+- **對應 FR**：FR-H-27（設定 modal 與參數表面）、FR-H-28（設定持久化與生效）、FR-H-29（功能維護佔位）、FR-H-30（賬號維護佔位）、FR-H-8（主題與鍵綁）、FR-E-4（per-agent／per-category 模型）、FR-CARRIER-1（五根隔離可觀察）、FR-CARRIER-4（路徑解析只讀 profile）、FR-CARRIER-13（MCP `get_theme`／`set_theme`）。
 
 ### 2.8 背景任務／sub-agent 檢視（background-task / sub-agent view）
 
@@ -153,7 +155,7 @@ flowchart LR
 ### 2.10 新增專案（NewProjectModal）
 
 - **目的**：建立新的文件專案（於 `~/knowledge`）。
-- **核心行為**：modal 輸入**名稱**、**文件英文名**（作為資料夾／識別，`^[a-z0-9][a-z0-9-]*$`）、**標籤**（以「,」分隔）；系統生成**專案編號**與**建立時間**；送出後由 **owx harness** `POST /rpc/project/create` 建立（[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)），成功後開啟該專案並執行 opencode `/init`。
+- **核心行為**：modal 輸入**名稱**、**文件英文名**（作為資料夾／識別，`^[a-z0-9][a-z0-9-]*$`）、**標籤**（以「,」分隔）；系統生成**專案編號**與**建立時間**；送出後由 **owx harness** `POST /rpc/project/create` 建立（[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)），**專案根目錄自動生成 `AGENTS.md`（一般性規範）**，成功後開啟該專案並執行 opencode `/init`。
 - **對應 FR**：FR-H-17（新增專案）、FR-G-3（command `/init`）。
 
 ### 2.11 檔案樹節點操作（NodeMenu）
@@ -165,8 +167,27 @@ flowchart LR
 ### 2.12 文件編輯器（僅 `md`）
 
 - **目的**：編輯 markdown 文件（唯一可編輯的格式）。
-- **核心行為**：`md` 可進入編輯模式（原始／所見即所得），支援 **Mermaid**；**非 `md` 檔案唯讀**。儲存經 **owx harness** `POST /rpc/fs/write`（`overwrite`）。
+- **核心行為**：`md` 可進入編輯模式，具 **編輯／並排／預覽** 三種模式（**預設並排**：左 `textarea` 原始碼、右即時渲染，共用 §2.5 之 `MarkdownView`；即時渲染含 GFM 全格式與 Mermaid）；分頁列「編輯」按鈕進入，儲存後回預覽並刷新檔案樹。**非 `md` 檔案唯讀**。儲存經 **owx harness** `POST /rpc/fs/write`（`overwrite`）。
 - **對應 FR**：FR-H-23（文件編輯）、FR-H-14（預覽）。
+
+### 2.13 專案屬性設定（ProjectPropertyModal）
+
+- **目的**：檢視／編輯**當前專案**的屬性——基本資料、基礎目錄、文件撰寫規範（含**依循規範**）、參數。
+- **入口**：Explorer 標頭的專案選單（`ProjectMenu`）**分割線**下之「**專案屬性設定**」（FR-H-27）。
+- **核心行為**：**tabbed modal**（**四個 tab**：基本資料／基礎目錄範例／文件撰寫規範／參數）；尺寸 `min(80vw,1792) × min(80vh,1120)`（**重用 `SettingsModal` 之 `.settings-modal` 樣式與導覽**）。
+  - **基本資料**：ID（唯讀）／名稱（中／英）／目錄名（已建立後唯讀）／專案屬性（**單選**；Phase 1）／**專案預設資料夾（唯讀預覽該屬性之清單）**／標籤（「,」分隔）。
+  - **基礎目錄範例**：依屬性自 `GET /rpc/project/base-dirs` 取建議清單（勾選）＋「是否據以生成」checkbox＋**「立即建立資料夾」按鈕**＋**「顯示隱藏檔案」checkbox**（`params.show_hidden`，**預設 false＝不顯示**，FR-H-58）；按鈕依目前清單經 `POST /rpc/project/base-dirs/apply` **只補缺**建目錄（不覆寫、不刪除、不改中繼資料），並回報 `created`／`skipped`／`failed`（FR-H-57）；清單為空時停用。
+  - **文件撰寫規範**：基礎規範（版本管理／標題／版次／變更履歷／機密等級，預設「一般」）＋提交檢查（一致性／客觀屬實／審計）＋**依循規範**（自 `GET /rpc/standards/list`；**必要項不可取消**）。
+  - **參數**：自動保存草稿（預設 10 分）。「顯示隱藏檔」已移至基礎目錄範例（FR-H-58）。
+  - 儲存經 **owx harness** `POST /rpc/project/update`（可冪等生成目錄、抄錄規範）；讀取經 `GET /rpc/project/get`。
+- **對應 FR**：FR-H-33～58、[`ADR-0011`](../adr/ADR-0011-project-metadata-and-standards-catalog.md)。
+
+### 2.14 標準規範瀏覽（StandardsModal）
+
+- **目的**：瀏覽 `owx-sample/standards/` 之**全部標準**（**自撰**綱要），供依循參考。
+- **入口**：ActivityBar 底部 **Settings** 浮動選單之「**標準規範 [D]**」（FR-H-56）。
+- **核心行為**：**modal**（`min(80vw,1792) × min(80vh,1120)`，重用 `.settings-modal`）；**左側**（`standards-nav`）為標準清單，**依分類分群**（`GET /rpc/standards/list`）；**右側**（`standards-content`）以 `react-markdown` 呈現所選標準內容（`GET /rpc/standards/get` → `owx-sample/standards/<id>.md`）。
+- **對應 FR**：FR-H-56、FR-H-51／52（依循規範／規範目錄）。
 
 ---
 
@@ -180,6 +201,8 @@ flowchart TD
     App --> Layout["AppLayout<br/>（三區：側面板 | DocumentPreview | Chat）"]
     App --> ProjectHome["ProjectHome<br/>（§2.9，全頁；未開啟專案）"]
     App --> NewProjectModal["NewProjectModal<br/>（§2.10）"]
+    App --> ProjectPropertyModal["ProjectPropertyModal<br/>（§2.13）"]
+    App --> StandardsModal["StandardsModal<br/>（§2.14）"]
 
     Layout --> ActivityBar["ActivityBar<br/>（Explorer／Outline／Knowledge Graph 切換；底部 Settings；48px 恆常可見）"]
     Layout --> SidePanel["SidePanel<br/>（可收合，160–480px）"]
@@ -189,7 +212,7 @@ flowchart TD
     Layout --> ChatPane["ChatWindow<br/>（§2.1，可收合，300–760px）"]
 
     ActivityBar --> ActivityIcon["ActivityIcon<br/>（Explorer／Outline／Knowledge Graph＋底部 Settings；點擊作用中圖示切換側面板）"]
-    ActivityBar --> SettingsMenu["SettingsMenu<br/>（浮動選單：參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]）"]
+    ActivityBar --> SettingsMenu["SettingsMenu<br/>（浮動選單：系統設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]）"]
 
     SidePanel --> FileExplorer["FileExplorer<br/>（§2.3）"]
     SidePanel --> DocumentOutline["DocumentOutline<br/>（§2.4）"]
@@ -430,8 +453,20 @@ const OW_URL =
 | `/rpc/export/notion` | POST（harness，規劃） | 匯出至 Notion | FR-H-22 |
 | `/rpc/share` | POST（harness，規劃） | 產生分享連結 | FR-H-22 |
 | `/rpc/knowledge/list` | GET（harness） | 列出 `~/knowledge` 文件專案（入口頁來源） | FR-H-16 |
+| `/rpc/project/get` | GET（harness） | 讀取專案中繼資料（缺欄補預設） | FR-H-48、FR-H-49 |
+| `/rpc/project/update` | POST（harness） | 更新專案屬性（冪等生成目錄／抄錄規範） | FR-H-48、FR-H-50、FR-H-55 |
+| `/rpc/project/base-dirs` | GET（harness） | 屬性→建議基礎目錄對照（`owx-sample`） | FR-H-41 |
+| `/rpc/project/base-dirs/apply` | POST（harness） | 依清單只補缺建立預設資料夾（不覆寫、不改中繼資料） | FR-H-57 |
+| `/rpc/standards/list` | GET（harness） | 規範目錄（`owx-Standard.json`，僅識別資料） | FR-H-51、FR-H-52 |
+| `/rpc/standards/get` | GET（harness） | 讀取單一標準文件（`standards/<id>.md`） | FR-H-56 |
 | `/rpc/git/status` | GET（harness） | 檔案變更狀態（Explorer 變更色） | FR-H-24 |
 | `/rpc/git/commit` | POST（harness） | 提交全部變更（文件全部提交） | FR-H-25 |
+| `/rpc/settings` | GET／POST（harness） | 讀取／寫入 owx 設定（`<config_dir>/settings.json`） | FR-H-27、FR-H-28 |
+| `/rpc/settings/logo` | GET／POST（harness） | 讀取／上傳品牌 Logo | FR-H-28 |
+| `/rpc/models` | GET（harness） | 模型目錄（模型下載清單；讀 opencode 預設 registry） | FR-H-31 |
+| `/auth/{id}` | PUT／DELETE | 設定／移除 provider 憑證（＝`/connect`） | FR-H-32 |
+| `/global/config` | PATCH | 寫入 opencode 全域設定（provider `baseURL`） | FR-H-32 |
+| `/provider` | GET | provider 清單與 `connected`（已連線） | FR-H-32 |
 | `/__ow-doc-status` | GET | 文件狀態聚合（僅 `LOCKED` 掛載） | FR-CARRIER-10 |
 | `/__ow-inject.js` | GET | 注入腳本（繞 CSP inline 限制） | FR-CARRIER-9 |
 
@@ -519,6 +554,8 @@ const OW_URL =
 | 文件預覽（DocumentPreview） | FR-H-14、FR-CARRIER-10 |
 | 版面區域收合／調寬 | FR-H-15 |
 | 專案入口頁與專案控制（ProjectHome／ProjectMenu） | FR-H-16、[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)（來源 `GET /rpc/knowledge/list`） |
+| 專案屬性設定（ProjectPropertyModal） | FR-H-33～55、[`ADR-0011`](../adr/ADR-0011-project-metadata-and-standards-catalog.md) |
+| 標準規範瀏覽（StandardsModal） | FR-H-56 |
 | 新增專案（NewProjectModal，harness 建立） | FR-H-17、FR-G-3、[`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md) |
 | 檔案樹節點操作（NodeMenu） | FR-H-18、[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md) |
 | 文件打包／解封裝 | FR-H-19、[`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md) |
@@ -556,9 +593,9 @@ const OW_URL =
 14. **節點操作的路徑邊界與資源上限待定**：`/rpc/fs/*`、`/rpc/archive/*` 的 `outside_worktree` 檢查、解壓後大小／檔案數上限與逾時待實作輪次細化（FR-H-18／19）。
 15. **建立文檔的模板待定**：「建立文檔」預設 markdown；是否帶 frontmatter（name／date）與對齊專案規範（`/init`）待細化（FR-H-18）。
 16. **外部整合未落地**：Notion API、filer、`pdf→md` 轉換引擎均**待評估/設置**；未設置時以 `501 not_configured` 呈現，不假造成功（FR-H-20～22、[`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)）。
-17. **多格式預覽的渲染器待選**：PDF／Word／CSV／Excel／圖片之 client 端渲染器（工具與授權）待選型；Mermaid 需額外渲染依賴（FR-H-14）。
-18. **編輯器選型待定**：`md` 編輯器（原始 vs WYSIWYG、Mermaid 編輯）與相依授權待細化（FR-H-23）。
-19. **Knowledge Graph 為佔位；Settings 為浮動選單**：ActivityBar 的「知識圖譜」僅**佔位**（待 GraphRAG）。底部 **Settings 開浮動選單**——**參數設置[S]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[A]**（快捷鍵字母可觸發）；其中**檢查版本**接 `GET /app`、**技能**接 `GET /api/skill`，其餘為佔位。
+17. **多格式預覽渲染器**：**markdown 已定案**（2026-10-23）——`react-markdown`＋`remark-gfm`＋`mermaid`（動態載入；ELK layout 因 `elkjs` EPL-2.0 以 MIT stub 取代，見 §2.5）；PDF／Word／CSV／Excel／圖片之 client 端渲染器**仍待選型**（授權須先查核）（FR-H-14）。
+18. **編輯器選型**：**已定案**（2026-10-23）——不引入 CodeMirror／Monaco／WYSIWYG，採 `textarea`＋**編輯／並排／預覽**三模式（預設並排、即時渲染），渲染與預覽共用 `MarkdownView`；依賴 `remark-gfm`、`mermaid` 皆 MIT（FR-H-23）。
+19. **Knowledge Graph 為佔位；Settings 為浮動選單＋modal**：ActivityBar 的「知識圖譜」僅**佔位**（待 GraphRAG）。底部 **Settings 開浮動選單**——**系統設置[S]／功能維護[F]／賬號維護[A]／技能[K]／權限管理[R]／檢查版本[C]／幫助[H]／關於[O]**（快捷鍵字母可觸發）；其中「**系統設置**」開啟**系統設置 modal**（FR-H-27／28；一般／外觀／模型三分頁）、「**功能維護[F]**」「**賬號維護[A]**」各開**同尺寸佔位 modal**（FR-H-29／30）、**檢查版本**接 `GET /app`、**技能**接 `GET /api/skill`，**權限管理／幫助／關於**仍為佔位。
 
 ---
 
@@ -566,6 +603,14 @@ const OW_URL =
 
 | 日期 | 版本 | 變更 |
 |---|---|---|
+| 2026-10-23 | v2.13 | **Markdown 全格式＋Mermaid**：新增 `MarkdownView`（`remark-gfm`；表格／任務清單／刪除線／自動連結／腳註；`.md-table` 橫向捲動）與 `MermaidBlock`（**動態載入** `mermaid`、`securityLevel: strict`、失敗降級）；§2.5 補渲染器說明、§2.12 編輯器改 **編輯／並排／預覽**（預設並排即時渲染）；依賴 `remark-gfm`／`mermaid` 皆 MIT。 |
+| 2026-10-23 | v2.12 | §2.13 基礎目錄範例增**「顯示隱藏檔案」**（`params.show_hidden`，預設不顯示；FR-H-58），參數 tab 移除同項；§2.3 Explorer 補**dot 項目預設隱藏**（前端 `lib/hidden.ts` 過濾，substrate `GET /file` 不變）；§2.13 對應 FR 擴至 FR-H-58。 |
+| 2026-10-23 | v2.11 | 依使用者指示：FR-H-57 建立按鈕由 **基本資料** 移到 **基礎目錄範例** tab（勾選清單／「是否據以生成」下方），標籤「**立即建立資料夾**」；基本資料僅保留預設清單唯讀預覽；清單為空時按鈕停用。 |
+| 2026-10-23 | v2.10 | §2.13 基本資料補**「生成預設資料夾」**（`POST /rpc/project/base-dirs/apply`；只補缺、不覆寫、不改中繼資料、回報 `created`／`skipped`／`failed`，FR-H-57）；§2.13 對應 FR 擴至 FR-H-57；§7.1 增該端點。 |
+| 2026-10-23 | v2.9 | §2.7 設定 modal 重整：**參數設置 → 系統設置**、移除「個人參數」分頁、改為 **一般／外觀／模型** 三分頁（`SettingsTab = general｜appearance｜model`；主題移入「外觀」、模型下載清單與 Provider 連線歸「模型」）；§3 元件樹、§11 缺口項 19 同步。 |
+| 2026-10-20 | v2.8 | 新增 §2.14 標準規範瀏覽（`StandardsModal`；Settings 選單「標準規範 [D]」→ modal 左清單／右內容）；§3 元件樹、§7.1 端點（含 `/rpc/standards/get`）、§10 依據同步（FR-H-56）。 |
+| 2026-10-20 | v2.7 | §2.7 全域參數補**模型下載清單**（FR-H-31）與 **Provider 連線**（FR-H-32）；§7.1 增 `/rpc/models`、`/auth/{id}`、`/global/config`、`/provider` 端點。 |
+| 2026-10-20 | v2.6 | §2.7 改寫為**參數設置 modal**（`80vw`×`80vh`、上限 1792×1120；僅 全域／個人參數兩子域；主題／主色／系統名稱／Logo／預設 provider-model-agent 生效）；Settings 選單新增**功能維護[F]／賬號維護[A]**（各開同尺寸佔位 modal）；§7.1 增 `/rpc/settings`、`/rpc/settings/logo` 端點；§11 缺口項 19 更新（[`ADR-0012`](../adr/ADR-0012-settings-persistence-in-harness-config.md)）。對齊 FR-H-27～30。 |
 | 2026-10-19 | v2.5 | model 下拉：provider 群組標題改**藍色**、models **縮排**、群組間隔；**頂部快速搜尋（逐字收斂）**。§2.1 更新。 |
 | 2026-10-19 | v0.3 | 改版為**文件優先 IDE**（[`ADR-0007`](../adr/ADR-0007-document-first-ide-layout.md)）：§1.1 定位聲明改寫（移除「不是文件瀏覽器」）、§1.2 IN／OUT 改八畫面、§1.3 圖更新；§2 新增 Explorer（§2.3）／Outline（§2.4）／DocumentPreview（§2.5），session 清單移入 Chat 標頭（§2.2）；§3 元件樹改三區版面（ActivityBar／FileExplorer／DocumentOutline／DocumentPreview／SessionMenu）；§7.1 補 `GET /file`、`GET /file/content` 並更新 `GET /project`；§8 增 Explorer／Outline／DocumentPreview 狀態欄；§10 增依據；§11 增檔案樹／大綱／預覽缺口（FR-H-12／13／14）。 |
 | 2026-10-18 | v0.2 | 新增 CommandPalette（§2.1 指令面板、§3 元件樹、§4.1 衍生資料註記）；§7.1 補 share／unshare／rename／fork／summarize／revert／unrevert／diff／provider-auth／config／app 端點；§8 增指令面板狀態欄；§10 增依據；§11 增內建目錄手動同步缺口（FR-H-11）。 |
