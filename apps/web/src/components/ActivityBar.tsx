@@ -115,7 +115,7 @@ export function ActivityBar({
           aria-label="owx"
           title="owx"
         >
-          <img src="/owx-logo.svg" alt="owx logo" />
+          <img src="/owx-logo.png" alt="owx logo" />
         </button>
       </div>
       <button
