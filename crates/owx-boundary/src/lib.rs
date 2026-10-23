@@ -151,6 +151,11 @@ pub fn router(state: AppState) -> Router {
         .route("/rpc/git/commit", post(rpc_git_commit))
         .route("/rpc/fs/mkdir", post(rpc_fs_mkdir))
         .route("/rpc/fs/write", post(rpc_fs_write))
+        .route("/rpc/fs/rename", post(rpc_fs_rename))
+        .route("/rpc/fs/copy", post(rpc_fs_copy))
+        .route("/rpc/fs/move", post(rpc_fs_move))
+        .route("/rpc/fs/delete", post(rpc_fs_delete))
+        .route("/rpc/fs/info", get(rpc_fs_info))
         .route("/rpc/import/file", post(rpc_import_file))
         .route("/rpc/import/notion", post(rpc_not_configured))
         .route("/rpc/convert", post(rpc_not_configured))
@@ -724,6 +729,223 @@ async fn rpc_fs_write(
     ))
 }
 
+/// 刪除時移入的專案內垃圾桶目錄（預設隱藏）。
+const TRASH_DIR: &str = ".owx-trash";
+
+fn valid_entry_name(name: &str) -> bool {
+    let trimmed = name.trim();
+    !trimmed.is_empty()
+        && trimmed != "."
+        && trimmed != ".."
+        && !trimmed.contains('/')
+        && !trimmed.contains('\\')
+        && !trimmed.contains('\0')
+}
+
+fn relative_rename(path: &str, name: &str) -> String {
+    match path.rsplit_once('/') {
+        Some((parent, _)) => format!("{parent}/{name}"),
+        None => name.to_string(),
+    }
+}
+
+fn copy_tree(src: &Path, dest: &Path) -> Result<(), &'static str> {
+    let meta = std::fs::metadata(src).map_err(|_| "not_found")?;
+    if meta.is_dir() {
+        std::fs::create_dir_all(dest).map_err(|_| "copy_failed")?;
+        for entry in std::fs::read_dir(src).map_err(|_| "read_failed")? {
+            let entry = entry.map_err(|_| "read_failed")?;
+            copy_tree(&entry.path(), &dest.join(entry.file_name()))?;
+        }
+        Ok(())
+    } else {
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent).map_err(|_| "copy_failed")?;
+        }
+        std::fs::copy(src, dest).map_err(|_| "copy_failed")?;
+        Ok(())
+    }
+}
+
+fn move_path(src: &Path, dest: &Path) -> Result<(), &'static str> {
+    if std::fs::rename(src, dest).is_ok() {
+        return Ok(());
+    }
+    copy_tree(src, dest)?;
+    if src.is_dir() {
+        std::fs::remove_dir_all(src).map_err(|_| "move_failed")
+    } else {
+        std::fs::remove_file(src).map_err(|_| "move_failed")
+    }
+}
+
+fn modified_millis(meta: &std::fs::Metadata) -> Option<u64> {
+    meta.modified()
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|delta| delta.as_millis() as u64)
+}
+
+fn inside_subtree(src: &Path, dest: &Path) -> bool {
+    dest != src && dest.starts_with(src)
+}
+
+#[derive(serde::Deserialize)]
+struct RenameBody {
+    directory: String,
+    path: String,
+    #[serde(rename = "newName")]
+    new_name: String,
+}
+
+/// `POST /rpc/fs/rename`：檔案／資料夾重新命名（同層；不覆蓋既有）。
+async fn rpc_fs_rename(
+    Json(body): Json<RenameBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let src = safe_join(Path::new(&body.directory), &body.path)
+        .map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !src.exists() {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    }
+    let name = body.new_name.trim();
+    if !valid_entry_name(name) {
+        return Err(fail(StatusCode::BAD_REQUEST, "invalid_name"));
+    }
+    let parent = src
+        .parent()
+        .ok_or_else(|| fail(StatusCode::BAD_REQUEST, "invalid_path"))?;
+    let dest = parent.join(name);
+    if dest.exists() {
+        return Err(fail(StatusCode::CONFLICT, "already_exists"));
+    }
+    std::fs::rename(&src, &dest)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "rename_failed"))?;
+    Ok(Json(json!({ "path": relative_rename(&body.path, name) })))
+}
+
+#[derive(serde::Deserialize)]
+struct TransferBody {
+    directory: String,
+    path: String,
+    dest: String,
+}
+
+/// `POST /rpc/fs/copy`：複製副本（`dest` 為完整相對路徑；不覆蓋既有）。
+async fn rpc_fs_copy(
+    Json(body): Json<TransferBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let root = Path::new(&body.directory);
+    let src = safe_join(root, &body.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    let dest = safe_join(root, &body.dest).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !src.exists() {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    }
+    if dest.exists() {
+        return Err(fail(StatusCode::CONFLICT, "already_exists"));
+    }
+    if inside_subtree(&src, &dest) {
+        return Err(fail(StatusCode::BAD_REQUEST, "invalid_target"));
+    }
+    copy_tree(&src, &dest).map_err(|code| fail(StatusCode::INTERNAL_SERVER_ERROR, code))?;
+    Ok(Json(json!({ "path": body.dest })))
+}
+
+/// `POST /rpc/fs/move`：移動／改名至其他路徑（不覆蓋既有）。
+async fn rpc_fs_move(
+    Json(body): Json<TransferBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let root = Path::new(&body.directory);
+    let src = safe_join(root, &body.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    let dest = safe_join(root, &body.dest).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !src.exists() {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    }
+    if dest.exists() {
+        return Err(fail(StatusCode::CONFLICT, "already_exists"));
+    }
+    if inside_subtree(&src, &dest) {
+        return Err(fail(StatusCode::BAD_REQUEST, "invalid_target"));
+    }
+    move_path(&src, &dest).map_err(|code| fail(StatusCode::INTERNAL_SERVER_ERROR, code))?;
+    Ok(Json(json!({ "path": body.dest })))
+}
+
+#[derive(serde::Deserialize)]
+struct DeleteBody {
+    directory: String,
+    path: String,
+    #[serde(default)]
+    trash: Option<bool>,
+}
+
+/// `POST /rpc/fs/delete`：刪除節點；預設移入 `.owx-trash`（`trash:false` 才永久刪除）。
+async fn rpc_fs_delete(
+    Json(body): Json<DeleteBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let relative = body.path.trim().trim_matches('/');
+    if relative.is_empty() || relative == "." {
+        return Err(fail(StatusCode::BAD_REQUEST, "invalid_path"));
+    }
+    let root = Path::new(&body.directory);
+    let target = safe_join(root, &body.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !target.exists() {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    }
+    if !body.trash.unwrap_or(true) {
+        let removed = if target.is_dir() {
+            std::fs::remove_dir_all(&target)
+        } else {
+            std::fs::remove_file(&target)
+        };
+        removed.map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "delete_failed"))?;
+        return Ok(Json(
+            json!({ "path": body.path, "deleted": true, "trashed": false }),
+        ));
+    }
+    let trash = safe_join(root, TRASH_DIR).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    std::fs::create_dir_all(&trash)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "delete_failed"))?;
+    let base = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("item");
+    let archived = trash.join(format!("{}-{base}", now_millis()));
+    move_path(&target, &archived).map_err(|code| fail(StatusCode::INTERNAL_SERVER_ERROR, code))?;
+    Ok(Json(
+        json!({ "path": body.path, "deleted": true, "trashed": true }),
+    ))
+}
+
+#[derive(serde::Deserialize)]
+struct FsInfoQuery {
+    directory: String,
+    path: String,
+}
+
+/// `GET /rpc/fs/info`：節點資訊（型別／大小／項目數／修改時間）。
+async fn rpc_fs_info(
+    Query(query): Query<FsInfoQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let target = safe_join(Path::new(&query.directory), &query.path)
+        .map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    let meta = std::fs::metadata(&target).map_err(|_| fail(StatusCode::NOT_FOUND, "not_found"))?;
+    let is_dir = meta.is_dir();
+    let entries = if is_dir {
+        std::fs::read_dir(&target)
+            .map(|items| items.filter_map(Result::ok).count())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    Ok(Json(json!({
+        "path": query.path,
+        "type": if is_dir { "directory" } else { "file" },
+        "size": if is_dir { serde_json::Value::Null } else { json!(meta.len()) },
+        "entries": entries,
+        "modified": modified_millis(&meta),
+    })))
+}
+
 #[derive(serde::Deserialize)]
 struct ImportFileBody {
     directory: String,
@@ -1214,8 +1436,14 @@ mod tests {
             "# {{project_name}}\n\n一般性規範\n",
         )
         .unwrap();
-        let created = create_project(&base, &sample, "測試專案", "my-doc", &["a".into(), "b".into()])
-            .expect("create should succeed");
+        let created = create_project(
+            &base,
+            &sample,
+            "測試專案",
+            "my-doc",
+            &["a".into(), "b".into()],
+        )
+        .expect("create should succeed");
         assert_eq!(created["slug"], "my-doc");
         let dir = base.join("my-doc");
         assert!(dir.is_dir());
@@ -1236,11 +1464,15 @@ mod tests {
         std::fs::create_dir_all(&sample).unwrap();
         assert!(create_project(&base, &sample, "n", "dup", &[]).is_ok());
         assert_eq!(
-            create_project(&base, &sample, "n", "dup", &[]).unwrap_err().1,
+            create_project(&base, &sample, "n", "dup", &[])
+                .unwrap_err()
+                .1,
             "already_exists"
         );
         assert_eq!(
-            create_project(&base, &sample, "n", "Bad Slug", &[]).unwrap_err().1,
+            create_project(&base, &sample, "n", "Bad Slug", &[])
+                .unwrap_err()
+                .1,
             "invalid_slug"
         );
         let _ = std::fs::remove_dir_all(&base);
@@ -1358,6 +1590,160 @@ mod node_ops_tests {
         let dest = root.join("out");
         extract_archive(&archive, &dest).unwrap();
         assert_eq!(std::fs::read(dest.join("proj/a.md")).unwrap(), b"hello");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn rename_moves_entry_and_rejects_conflicts() {
+        let root = tmp("rename");
+        let directory = root.to_string_lossy().to_string();
+        std::fs::write(root.join("old.md"), b"x").unwrap();
+        let done = rpc_fs_rename(Json(RenameBody {
+            directory: directory.clone(),
+            path: "old.md".into(),
+            new_name: "new.md".into(),
+        }))
+        .await
+        .expect("rename");
+        assert_eq!(done.0["path"], json!("new.md"));
+        assert!(root.join("new.md").is_file());
+
+        std::fs::write(root.join("taken.md"), b"y").unwrap();
+        let conflict = rpc_fs_rename(Json(RenameBody {
+            directory: directory.clone(),
+            path: "new.md".into(),
+            new_name: "taken.md".into(),
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(conflict.0, StatusCode::CONFLICT);
+
+        let bad = rpc_fs_rename(Json(RenameBody {
+            directory,
+            path: "new.md".into(),
+            new_name: "../escape".into(),
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(bad.0, StatusCode::BAD_REQUEST);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn delete_defaults_to_trash_and_supports_permanent() {
+        let root = tmp("delete");
+        let directory = root.to_string_lossy().to_string();
+        std::fs::create_dir_all(root.join("dir/sub")).unwrap();
+        std::fs::write(root.join("dir/sub/a.md"), b"x").unwrap();
+
+        let trashed = rpc_fs_delete(Json(DeleteBody {
+            directory: directory.clone(),
+            path: "dir".into(),
+            trash: None,
+        }))
+        .await
+        .expect("trash");
+        assert_eq!(trashed.0["trashed"], json!(true));
+        assert!(!root.join("dir").exists());
+        assert!(root.join(TRASH_DIR).is_dir());
+
+        std::fs::write(root.join("gone.md"), b"x").unwrap();
+        let purged = rpc_fs_delete(Json(DeleteBody {
+            directory: directory.clone(),
+            path: "gone.md".into(),
+            trash: Some(false),
+        }))
+        .await
+        .expect("purge");
+        assert_eq!(purged.0["trashed"], json!(false));
+        assert!(!root.join("gone.md").exists());
+
+        let root_delete = rpc_fs_delete(Json(DeleteBody {
+            directory,
+            path: ".".into(),
+            trash: None,
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(root_delete.0, StatusCode::BAD_REQUEST);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn copy_and_move_guard_targets() {
+        let root = tmp("copymove");
+        let directory = root.to_string_lossy().to_string();
+        std::fs::create_dir_all(root.join("src/inner")).unwrap();
+        std::fs::write(root.join("src/inner/a.md"), b"hello").unwrap();
+
+        let copied = rpc_fs_copy(Json(TransferBody {
+            directory: directory.clone(),
+            path: "src".into(),
+            dest: "copy".into(),
+        }))
+        .await
+        .expect("copy");
+        assert_eq!(copied.0["path"], json!("copy"));
+        assert_eq!(
+            std::fs::read(root.join("copy/inner/a.md")).unwrap(),
+            b"hello"
+        );
+
+        let nested = rpc_fs_copy(Json(TransferBody {
+            directory: directory.clone(),
+            path: "src".into(),
+            dest: "src/inside".into(),
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(nested.0, StatusCode::BAD_REQUEST);
+
+        let moved = rpc_fs_move(Json(TransferBody {
+            directory: directory.clone(),
+            path: "copy".into(),
+            dest: "renamed".into(),
+        }))
+        .await
+        .expect("move");
+        assert_eq!(moved.0["path"], json!("renamed"));
+        assert!(root.join("renamed/inner/a.md").is_file());
+        assert!(!root.join("copy").exists());
+
+        let occupied = rpc_fs_move(Json(TransferBody {
+            directory,
+            path: "renamed".into(),
+            dest: "src".into(),
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(occupied.0, StatusCode::CONFLICT);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn info_reports_type_size_and_entries() {
+        let root = tmp("info");
+        let directory = root.to_string_lossy().to_string();
+        std::fs::create_dir_all(root.join("d")).unwrap();
+        std::fs::write(root.join("d/a.md"), b"12345").unwrap();
+
+        let file = rpc_fs_info(Query(FsInfoQuery {
+            directory: directory.clone(),
+            path: "d/a.md".into(),
+        }))
+        .await
+        .expect("file info");
+        assert_eq!(file.0["type"], json!("file"));
+        assert_eq!(file.0["size"], json!(5));
+
+        let dir = rpc_fs_info(Query(FsInfoQuery {
+            directory,
+            path: "d".into(),
+        }))
+        .await
+        .expect("dir info");
+        assert_eq!(dir.0["type"], json!("directory"));
+        assert_eq!(dir.0["entries"], json!(1));
         let _ = std::fs::remove_dir_all(&root);
     }
 

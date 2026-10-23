@@ -19,6 +19,10 @@ export function baseName(path: string): string {
   return parts[parts.length - 1] ?? trimmed;
 }
 
+export function nodePath(path: string): string {
+  return path.replace(/\/+$/, "");
+}
+
 export function joinPath(dir: string, name: string): string {
   const base = dir.endsWith("/") ? dir : `${dir}/`;
   return `${base}${name}`;

@@ -22,6 +22,11 @@ harness（`owx-boundary`，loopback sidecar）新增 **fs 與 archive 管理 RPC
 |---|---|
 | `POST /rpc/fs/mkdir` | 建立資料夾 |
 | `POST /rpc/fs/write` | 建立／寫入文檔 |
+| `POST /rpc/fs/rename` | 重新命名（同層、不覆蓋） |
+| `POST /rpc/fs/copy` | 複製副本（遞迴、不覆蓋） |
+| `POST /rpc/fs/move` | 移動／改名至其他路徑 |
+| `POST /rpc/fs/delete` | 刪除（預設移至 `.owx-trash`；`trash:false` 永久刪除） |
+| `GET /rpc/fs/info` | 節點資訊（型別／大小／項目數／修改時間） |
 | `POST /rpc/archive/create` | 打包（zip／tar.gz／tar） |
 | `POST /rpc/archive/extract` | 解封裝（依副檔名偵測） |
 

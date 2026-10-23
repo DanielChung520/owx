@@ -38,7 +38,12 @@ import {
   createProject,
   createSession,
   currentProject,
+  fsCopy,
+  fsDelete,
+  fsInfo,
   fsMkdir,
+  fsMove,
+  fsRename,
   fsWrite,
   findFiles,
   getSettings,
@@ -73,7 +78,7 @@ import {
 import { runBuiltinCommand, type CommandDialogPayload } from "./lib/command-actions";
 import type { PaletteCommand } from "./lib/commands";
 import { chatReducer, initialChatState } from "./lib/chat";
-import { baseName, isArchive, isMarkdown, joinPath } from "./lib/files";
+import { baseName, isArchive, isMarkdown, joinPath, nodePath } from "./lib/files";
 import { parseOutline } from "./lib/outline";
 import { useSessionStream } from "./lib/useSessionStream";
 
@@ -456,6 +461,111 @@ export function App(): JSX.Element {
     input.click();
   };
 
+  const closeDocsUnder = (path: string): void => {
+    const prefix = `${path}/`;
+    const next = openDocs.filter(
+      (item) => item.path !== path && !item.path.startsWith(prefix),
+    );
+    setOpenDocs(next);
+    if (activeDocPath !== null && !next.some((item) => item.path === activeDocPath)) {
+      setActiveDocPath(next[next.length - 1]?.path ?? null);
+    }
+  };
+
+  const entryPath = (entry: FileEntry): string => nodePath(entry.path);
+
+  const getName = (entry: FileEntry): string => baseName(entry.path);
+
+  const renameNode = (entry: FileEntry): void => {
+    const path = entryPath(entry);
+    const current = getName(entry);
+    const name = window.prompt("新名稱", current);
+    if (name === null || name.trim() === "" || name.trim() === current) {
+      return;
+    }
+    void (async () => {
+      try {
+        const result = await fsRename(projectRoot, path, name.trim());
+        closeDocsUnder(path);
+        refreshTree();
+        setNotice(`已重新命名：${result.path}`);
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
+  const duplicateNode = (entry: FileEntry): void => {
+    const path = entryPath(entry);
+    const dest = window.prompt("複製副本的路徑", `${path}.copy`);
+    if (dest === null || dest.trim() === "") {
+      return;
+    }
+    void (async () => {
+      try {
+        await fsCopy(projectRoot, path, dest.trim());
+        refreshTree();
+        setNotice(`已複製為：${dest.trim()}`);
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
+  const moveNode = (entry: FileEntry): void => {
+    const path = entryPath(entry);
+    const dest = window.prompt("移動到（相對路徑，含新名稱）", path);
+    if (dest === null || dest.trim() === "" || dest.trim() === path) {
+      return;
+    }
+    void (async () => {
+      try {
+        await fsMove(projectRoot, path, dest.trim());
+        closeDocsUnder(path);
+        refreshTree();
+        setNotice(`已移動：${dest.trim()}`);
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
+  const deleteNode = (entry: FileEntry): void => {
+    if (!window.confirm(`刪除「${getName(entry)}」？（移至 .owx-trash，可復原）`)) {
+      return;
+    }
+    const path = entryPath(entry);
+    void (async () => {
+      try {
+        await fsDelete(projectRoot, path);
+        closeDocsUnder(path);
+        refreshTree();
+        setNotice("已刪除（移至 .owx-trash）");
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
+  const showInfo = (entry: FileEntry): void => {
+    void (async () => {
+      try {
+        const info = await fsInfo(projectRoot, entryPath(entry));
+        const lines = [
+          `路徑：${info.path}`,
+          `型別：${info.type === "directory" ? "資料夾" : "檔案"}`,
+          info.type === "file" ? `大小：${info.size ?? 0} bytes` : `項目數：${info.entries}`,
+          info.modified !== null
+            ? `修改時間：${new Date(info.modified).toLocaleString()}`
+            : "修改時間：未知",
+        ];
+        setDialog({ title: "檔案資訊", body: lines.join("\n") });
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
   const copyPath = (entry: FileEntry, absolute: boolean): void => {
     const value = absolute ? entry.absolute : entry.path;
     void navigator.clipboard.writeText(value).then(
@@ -525,6 +635,13 @@ export function App(): JSX.Element {
       label: "匯出",
       onSelect: () => placeholderOp("匯出", "/rpc/export/filer", { path: entry.path }),
     });
+    const edit: NodeMenuItem[] = [
+      { label: "重新命名", onSelect: () => renameNode(entry) },
+      { label: "複製副本", onSelect: () => duplicateNode(entry) },
+      { label: "移動到…", onSelect: () => moveNode(entry) },
+      { label: "刪除", onSelect: () => deleteNode(entry) },
+      { label: "檔案資訊", onSelect: () => showInfo(entry) },
+    ];
     const pack: NodeMenuItem[] = [{ label: "打包", onSelect: () => packageNode(entry) }];
     if (entry.type === "file" && isArchive(entry.path)) {
       pack.push({ label: "解封裝", onSelect: () => unpackNode(entry) });
@@ -541,7 +658,7 @@ export function App(): JSX.Element {
       { label: "複製相對路徑", onSelect: () => copyPath(entry, false) },
       { label: "複製絕對路徑", onSelect: () => copyPath(entry, true) },
     ];
-    return [create, io, pack, paths].filter((group) => group.length > 0);
+    return [create, io, edit, pack, paths].filter((group) => group.length > 0);
   };
 
   const checkVersion = (): void => {

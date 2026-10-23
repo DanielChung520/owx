@@ -304,6 +304,40 @@ sequenceDiagram
 - **回應**（200）：`{ path: string, bytes: number }`
 - **錯誤**：`400 outside_worktree`／`409 already_exists`（`overwrite` 未設時）
 
+#### `POST /rpc/fs/rename`（重新命名）
+
+- **請求**：`{ directory: string, path: string, newName: string }`
+- **回應**（200）：`{ path: string }`（新相對路徑）
+- **錯誤**：`400 outside_worktree`／`400 invalid_name`（空、含路徑分隔、`.`／`..`）／`404 not_found`／`409 already_exists`
+- **語意**：同層改名；**不覆蓋**既有節點。
+
+#### `POST /rpc/fs/copy`（複製副本）
+
+- **請求**：`{ directory: string, path: string, dest: string }`（`dest` 為**完整相對目標路徑**）
+- **回應**（200）：`{ path: string }`
+- **錯誤**：`400 invalid_target`（目標位於來源子樹內）／`404 not_found`／`409 already_exists`
+- **語意**：檔案或目錄**遞迴**複製；不覆蓋既有。
+
+#### `POST /rpc/fs/move`（移動／改名至其他路徑）
+
+- **請求**：`{ directory: string, path: string, dest: string }`
+- **回應**（200）：`{ path: string }`
+- **錯誤**：`400 invalid_target`／`404 not_found`／`409 already_exists`
+- **語意**：優先 `rename`，跨檔案系統時退回複製＋刪除。
+
+#### `POST /rpc/fs/delete`（刪除）
+
+- **請求**：`{ directory: string, path: string, trash?: boolean }`（`trash` 預設 `true`）
+- **回應**（200）：`{ path: string, deleted: true, trashed: boolean }`
+- **錯誤**：`400 invalid_path`（空／`.`；**不可刪除專案根**）／`404 not_found`
+- **語意**：`trash:true` 時移入專案內 **`.owx-trash/<epoch>-<name>`**（預設隱藏，可復原）；`trash:false` 為永久刪除。
+
+#### `GET /rpc/fs/info`（節點資訊）
+
+- **請求**：query `directory`、`path`
+- **回應**（200）：`{ path, type: "file"|"directory", size: number|null, entries: number, modified: number|null }`（`size` 僅檔案；`entries` 僅目錄；`modified` 為 epoch 毫秒）
+- **錯誤**：`400 outside_worktree`／`404 not_found`
+
 #### `POST /rpc/archive/create`（打包）
 
 - **請求**：`{ directory: string, path: string, format?: "zip" | "tar.gz" | "tar" }`（預設 `zip`）
@@ -884,6 +918,7 @@ pub struct ErrorPayload {
 | 2026-10-20 | v0.9 | §2.8 增 `GET /rpc/models`（模型目錄；讀 opencode 預設 registry）與 **Provider 連線走 substrate opencode API** 註記（`PUT/DELETE /auth/{id}`、`GET /provider`、`PATCH /global/config`）。對齊 FR-H-31／FR-H-32。 |
 | 2026-10-20 | v0.8 | 新增 **§2.8 harness 管理 RPC：設定（settings）**（`GET/POST /rpc/settings`、`POST/GET /rpc/settings/logo`；設定物件、錯誤、`knowledgeRoot` 覆寫；未知鍵向前相容）。依 [`ADR-0012`](../adr/ADR-0012-settings-persistence-in-harness-config.md)。 |
 | 2026-10-19 | v0.7 | §2.6 增 `POST /rpc/git/commit`（提交全部變更；供「文件全部提交」）。 |
+| 2026-10-24 | v0.5 | §2.6 新增檔案樹節點操作 **`/rpc/fs/rename`／`/rpc/fs/copy`／`/rpc/fs/move`／`/rpc/fs/delete`（`.owx-trash`）／`/rpc/fs/info`** 契約（對齊一般檔案總管；FR-H-18）。 |
 | 2026-10-19 | v0.4 | 新增 **§2.7 harness 管理 RPC：文件匯入／轉換／匯出／分享（規劃中）**（`/rpc/import/file`、`/rpc/import/notion`、`/rpc/convert`、`/rpc/export/filer`、`/rpc/export/notion`、`/rpc/share`；含 `501 not_configured` 佔位）。依 [`ADR-0010`](../adr/ADR-0010-document-lifecycle-via-harness.md)。 |
 | 2026-10-19 | v0.3 | 新增 **§2.6 harness 管理 RPC：檔案樹節點操作**（`/rpc/fs/mkdir`、`/rpc/fs/write`、`/rpc/archive/create`、`/rpc/archive/extract` 契約、共同安全邊界、錯誤、go-live 註記）。依 [`ADR-0009`](../adr/ADR-0009-filetree-node-operations-via-harness.md)。 |
 | 2026-10-19 | v0.2 | §2 擴為「loopback 入向 RPC（shim／前端 → sidecar）」並新增 **§2.5 harness 管理 RPC**（`POST /rpc/project/create` 契約、錯誤、副作用、安全註記）；§1.1 契約清單補「harness 管理 RPC」。依 [`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)。 |

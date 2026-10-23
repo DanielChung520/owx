@@ -484,6 +484,59 @@ export async function fsWrite(
   await harnessPost("/rpc/fs/write", { directory, path, content, overwrite });
 }
 
+export async function fsRename(
+  directory: string,
+  path: string,
+  newName: string,
+): Promise<{ path: string }> {
+  return harnessPost<{ path: string }>("/rpc/fs/rename", { directory, path, newName });
+}
+
+export async function fsCopy(
+  directory: string,
+  path: string,
+  dest: string,
+): Promise<{ path: string }> {
+  return harnessPost<{ path: string }>("/rpc/fs/copy", { directory, path, dest });
+}
+
+export async function fsMove(
+  directory: string,
+  path: string,
+  dest: string,
+): Promise<{ path: string }> {
+  return harnessPost<{ path: string }>("/rpc/fs/move", { directory, path, dest });
+}
+
+export async function fsDelete(
+  directory: string,
+  path: string,
+  trash = true,
+): Promise<{ deleted: boolean; trashed: boolean }> {
+  return harnessPost<{ deleted: boolean; trashed: boolean }>("/rpc/fs/delete", {
+    directory,
+    path,
+    trash,
+  });
+}
+
+export interface FsInfo {
+  path: string;
+  type: "file" | "directory";
+  size: number | null;
+  entries: number;
+  modified: number | null;
+}
+
+export async function fsInfo(directory: string, path: string): Promise<FsInfo> {
+  const query = new URLSearchParams({ directory, path });
+  const res = await fetch(`${harnessBase}/rpc/fs/info?${query.toString()}`);
+  if (!res.ok) {
+    throw new Error(`fsInfo failed: ${res.status}`);
+  }
+  return (await res.json()) as FsInfo;
+}
+
 export async function importFile(
   directory: string,
   path: string,

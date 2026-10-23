@@ -5,6 +5,7 @@ import {
   isMarkdown,
   isText,
   joinPath,
+  nodePath,
   parentPath,
 } from "./files";
 
@@ -33,6 +34,12 @@ describe("file helpers", () => {
     expect(baseName("docs/guide/a.md")).toBe("a.md");
     expect(baseName("docs/")).toBe("docs");
     expect(baseName("a.md")).toBe("a.md");
+  });
+
+  it("strips trailing slashes for node operations", () => {
+    expect(nodePath("docs-renamed/")).toBe("docs-renamed");
+    expect(nodePath("a/b/")).toBe("a/b");
+    expect(nodePath("docs/a.md")).toBe("docs/a.md");
   });
 
   it("joins paths", () => {
