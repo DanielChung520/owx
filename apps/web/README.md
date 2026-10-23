@@ -24,6 +24,14 @@ pnpm --filter @owx/web run dev   # http://localhost:5173
 
 `VITE_OPENCODE_URL` 留空時不建立 SSE 連線（見 `.env.example`）。
 
+## Harness sidecar（`/rpc/*`）
+
+- 前端 `/rpc/*` 呼叫經 dev proxy（[`vite.config.ts`](vite.config.ts)）轉至 harness sidecar `http://127.0.0.1:13110`。
+- 啟動（repo 根目錄）：`cargo run -p owx-harnessd`；dev 建議 `OWX_SAMPLE_DIR="$PWD/../../owx-sample" cargo run -p owx-harnessd`（提供規範目錄 `owx-Standard.json` 與基礎目錄範本；未設則「依循規範／基礎目錄」為空，非錯誤）。
+- **改動 `/rpc/*` 路由後須重建並重啟**：`cargo build -p owx-harnessd`，否則新路由回 **404**（跑的是舊 binary）。
+
 ## 依賴授權
 
-`react` / `react-dom` / `vite` / `@vitejs/plugin-react` / `typescript` 皆 **MIT**（可交付）。
+`react` / `react-dom` / `react-markdown` / `remark-gfm` / `mermaid` / `vite` / `@vitejs/plugin-react` / `typescript` 皆 **MIT**（可交付）。
+
+> `mermaid` 以**動態 `import()`** 載入（僅文件含 ```mermaid 圍籬時抓取），不進初始 bundle。

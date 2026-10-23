@@ -4,10 +4,12 @@ export function ProjectMenu({
   onOpen,
   onNew,
   onClose,
+  onPropertySettings,
 }: {
   onOpen: () => void;
   onNew: () => void;
   onClose: () => void;
+  onPropertySettings: () => void;
 }): JSX.Element {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -68,6 +70,15 @@ export function ProjectMenu({
             onClick={() => run(onClose)}
           >
             關閉專案
+          </button>
+          <div className="menu-separator" role="separator" />
+          <button
+            type="button"
+            className="menu-item"
+            role="menuitem"
+            onClick={() => run(onPropertySettings)}
+          >
+            專案屬性設定
           </button>
         </div>
       ) : null}

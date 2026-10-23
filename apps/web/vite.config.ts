@@ -20,6 +20,7 @@ export default defineConfig({
       "/config": { target: OPENCODE_URL, changeOrigin: true },
       "/agent": { target: OPENCODE_URL, changeOrigin: true },
       "/provider": { target: OPENCODE_URL, changeOrigin: true },
+      "/auth": { target: OPENCODE_URL, changeOrigin: true },
       "/permission": { target: OPENCODE_URL, changeOrigin: true },
       "/path": { target: OPENCODE_URL, changeOrigin: true },
       "/tui": { target: OPENCODE_URL, changeOrigin: true },

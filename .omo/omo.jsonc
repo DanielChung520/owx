@@ -1,0 +1,40 @@
+// owx 專用 omo 設定（project scope，只影響 owx）
+// 說明：此檔位於 owx 專案根目錄 .omo/omo.jsonc，omo 以「project scope」覆蓋
+// 使用者層級 ~/.omo/omo.jsonc。其他專案不會讀到此檔，改這裡不影響其他專案。
+// 授權：設定內容為 owx 自有，非 omo 原始碼；omo 本體（vendored）位於 repo 外 ~/.owx/omo/
+{
+  "[opencode]": {
+    "agents": {
+      // 主 agent：sisyphus 改名為 owx 專用名稱
+      "sisyphus": {
+        "displayName": "owx",
+        "prompt_append": "你是 owx 的主 agent，名稱「owx」。你的使命是文件優先的 agent 執行環境——以文件／知識為原生操作對象，coding 只是特例。"
+      },
+      // 唯讀研究型 sub-agent（探索／文件檢索／計畫諮詢／計畫審查）
+      "oracle": {
+        "displayName": "owx-oracle"
+      },
+      "librarian": {
+        "displayName": "owx-librarian"
+      },
+      "explore": {
+        "displayName": "owx-explore"
+      },
+      "metis": {
+        "displayName": "owx-metis"
+      },
+      "momus": {
+        "displayName": "owx-momus"
+      },
+      "multimodal-looker": {
+        "displayName": "owx-looker"
+      },
+      "atlas": {
+        "displayName": "owx-atlas"
+      },
+      "sisyphus-junior": {
+        "displayName": "owx-worker"
+      }
+    }
+  }
+}

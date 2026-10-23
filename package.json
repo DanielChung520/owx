@@ -13,5 +13,15 @@
     "gate:license": "node scripts/license-check.mjs",
     "gate:docs": "node scripts/check-docs.mjs",
     "gate:sbom": "node scripts/sbom.mjs"
+  },
+  "pnpm": {
+    "overrides": {
+      "elkjs": "file:packages/elkjs-stub"
+    },
+    "packageExtensions": {
+      "khroma@2.1.0": {
+        "license": "MIT"
+      }
+    }
   }
 }

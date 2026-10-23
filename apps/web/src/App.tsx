@@ -11,8 +11,16 @@ import { MessageList } from "./components/MessageList";
 import { NewProjectModal } from "./components/NewProjectModal";
 import { NodeMenu, type NodeMenuItem } from "./components/NodeMenu";
 import { ProjectHome } from "./components/ProjectHome";
+import { ProjectPropertyModal } from "./components/ProjectPropertyModal";
 import { Resizer } from "./components/Resizer";
 import { SettingsMenu, type SettingsItem } from "./components/SettingsMenu";
+import { SettingsModal, type SettingsTab } from "./components/SettingsModal";
+import { StandardsModal } from "./components/StandardsModal";
+import {
+  ACCOUNT_MAINTENANCE_ITEMS,
+  FEATURE_MAINTENANCE_ITEMS,
+  PlaceholderModal,
+} from "./components/PlaceholderModal";
 import {
   CHAT_DEFAULT,
   CHAT_MAX,
@@ -23,6 +31,7 @@ import {
   clamp,
 } from "./lib/layout";
 import {
+  DEFAULT_SETTINGS,
   appInfo,
   archiveCreate,
   archiveExtract,
@@ -32,6 +41,7 @@ import {
   fsMkdir,
   fsWrite,
   findFiles,
+  getSettings,
   gitCommit,
   gitStatus,
   harnessPost,
@@ -43,8 +53,11 @@ import {
   listProviders,
   listSessions,
   listSkills,
+  logoUrl,
+  projectGet,
   readFileContent,
   runSessionCommand,
+  saveSettings,
   sendMessageAsync,
   setSessionAgent,
   setSessionModel,
@@ -55,6 +68,7 @@ import {
   type NewProjectInput,
   type ProviderGroup,
   type SessionSummary,
+  type Settings,
 } from "./lib/api";
 import { runBuiltinCommand, type CommandDialogPayload } from "./lib/command-actions";
 import type { PaletteCommand } from "./lib/commands";
@@ -88,6 +102,21 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return window.btoa(binary);
 }
 
+function applySettings(settings: Settings): void {
+  const el = document.documentElement;
+  if (settings.personal.theme === "system") {
+    delete el.dataset.theme;
+  } else {
+    el.dataset.theme = settings.personal.theme;
+  }
+  if (settings.global.accent !== null && settings.global.accent !== "") {
+    el.style.setProperty("--accent", settings.global.accent);
+  } else {
+    el.style.removeProperty("--accent");
+  }
+  document.title = settings.global.systemName !== "" ? settings.global.systemName : "owx";
+}
+
 export function App(): JSX.Element {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -111,11 +140,21 @@ export function App(): JSX.Element {
   const [docStatus, setDocStatus] = useState<Record<string, string>>({});
   const [homeMode, setHomeMode] = useState(true);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
+  const [standardsOpen, setStandardsOpen] = useState(false);
   const [nodeMenu, setNodeMenu] = useState<{ entry: FileEntry; x: number; y: number } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [projectShowHidden, setProjectShowHidden] = useState(false);
   const [editing, setEditing] = useState(false);
   const [gitFiles, setGitFiles] = useState<Record<string, string>>({});
   const [settingsMenu, setSettingsMenu] = useState<{ left: number; bottom: number } | null>(null);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
+  const [placeholder, setPlaceholder] = useState<{
+    title: string;
+    items: readonly string[];
+  } | null>(null);
   const [docMenu, setDocMenu] = useState<{ x: number; y: number } | null>(null);
 
   useSessionStream(activeId, dispatch);
@@ -154,6 +193,18 @@ export function App(): JSX.Element {
         } catch {
           // 無目前專案時維持空根，由使用者以專案選單切換。
         }
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const loaded = await getSettings();
+        setSettings(loaded);
+        applySettings(loaded);
+      } catch {
+        setSettings(DEFAULT_SETTINGS);
       }
     })();
   }, []);
@@ -198,6 +249,29 @@ export function App(): JSX.Element {
       } catch {
         if (!cancelled) {
           setGitFiles({});
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectRoot, reloadKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (projectRoot === "") {
+      setProjectShowHidden(false);
+      return;
+    }
+    void (async () => {
+      try {
+        const meta = await projectGet(projectRoot);
+        if (!cancelled) {
+          setProjectShowHidden(meta.params?.show_hidden === true);
+        }
+      } catch {
+        if (!cancelled) {
+          setProjectShowHidden(false);
         }
       }
     })();
@@ -310,6 +384,7 @@ export function App(): JSX.Element {
     try {
       const sessionId = await createSession(created.worktree);
       setActiveId(sessionId);
+      applySessionDefaults(sessionId);
       await runSessionCommand(sessionId, "init");
       setNotice("專案已建立，並已執行 /init");
     } catch {
@@ -514,11 +589,31 @@ export function App(): JSX.Element {
     })();
   };
 
+  const openSettings = (tab: SettingsTab): void => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  };
+
   const settingsItems: SettingsItem[] = [
     {
       key: "S",
-      label: "參數設置",
-      onSelect: () => setDialog({ title: "參數設置", body: "尚未實作（佔位）。" }),
+      label: "系統設置",
+      onSelect: () => openSettings("general"),
+    },
+    {
+      key: "D",
+      label: "標準規範",
+      onSelect: () => setStandardsOpen(true),
+    },
+    {
+      key: "F",
+      label: "功能維護",
+      onSelect: () => setPlaceholder({ title: "功能維護", items: FEATURE_MAINTENANCE_ITEMS }),
+    },
+    {
+      key: "A",
+      label: "賬號維護",
+      onSelect: () => setPlaceholder({ title: "賬號維護", items: ACCOUNT_MAINTENANCE_ITEMS }),
     },
     {
       key: "K",
@@ -546,7 +641,7 @@ export function App(): JSX.Element {
       onSelect: () => setDialog({ title: "幫助", body: HELP_TEXT }),
     },
     {
-      key: "A",
+      key: "O",
       label: "關於",
       onSelect: () => setDialog({ title: "關於 owx", body: ABOUT_TEXT }),
     },
@@ -569,11 +664,22 @@ export function App(): JSX.Element {
     })();
   };
 
+  const applySessionDefaults = (id: string): void => {
+    const { defaultProviderId, defaultModelId, defaultAgent } = settings.global;
+    if (defaultProviderId !== null && defaultModelId !== null) {
+      void setSessionModel(id, defaultProviderId, defaultModelId).catch(() => {});
+    }
+    if (defaultAgent !== null) {
+      void setSessionAgent(id, defaultAgent).catch(() => {});
+    }
+  };
+
   const newSession = (): void => {
     void (async () => {
       try {
         const id =     await createSession(projectRoot);
         setActiveId(id);
+        applySessionDefaults(id);
         dispatch({ type: "clear" });
         await refreshSessions();
         setError(null);
@@ -590,6 +696,7 @@ export function App(): JSX.Element {
         if (id === null) {
           id =     await createSession(projectRoot);
           setActiveId(id);
+          applySessionDefaults(id);
         }
         await sendMessageAsync(id, text);
         await refreshSessions();
@@ -634,8 +741,19 @@ export function App(): JSX.Element {
       el.dataset.theme !== undefined
         ? el.dataset.theme === "dark"
         : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    el.dataset.theme = isDark ? "light" : "dark";
+    const next: Settings = {
+      ...settings,
+      personal: { theme: isDark ? "light" : "dark" },
+    };
+    applySettings(next);
+    setSettings(next);
+    void saveSettings(next).catch(() => {});
   };
+
+  const darkTheme =
+    settings.personal.theme === "dark" ||
+    (settings.personal.theme === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const focusSelector = (selector: string): void => {
     document.querySelector<HTMLElement>(selector)?.focus();
@@ -712,12 +830,26 @@ export function App(): JSX.Element {
     />
   ) : null;
 
+  const propertyModal =
+    showProjectSettings && projectRoot !== "" ? (
+      <ProjectPropertyModal
+        directory={projectRoot}
+        onClose={() => setShowProjectSettings(false)}
+        onSaved={(notice) => {
+          setNotice(notice);
+          setReloadKey((key) => key + 1);
+        }}
+      />
+    ) : null;
+
   if (homeMode) {
     return (
       <div className="project-home-wrap">
         <ProjectHome
           projects={projects}
           currentRoot={projectRoot}
+          systemName={settings.global.systemName}
+          logoSrc={logoUrl(settings.global.logo)}
           onOpen={openProject}
           onNew={() => setShowNewProject(true)}
         />
@@ -731,7 +863,10 @@ export function App(): JSX.Element {
       <ActivityBar
         active={activeView}
         collapsed={leftCollapsed}
+        dark={darkTheme}
         onSelect={selectPanel}
+        onProfile={() => openSettings("appearance")}
+        onTheme={toggleTheme}
         onSettingsMenu={(anchor) =>
           setSettingsMenu({
             left: anchor.right + 6,
@@ -748,12 +883,14 @@ export function App(): JSX.Element {
               projects.find((project) => project.worktree === projectRoot)?.name ?? ""
             }
             reloadKey={reloadKey}
+            showHidden={projectShowHidden}
             gitFiles={gitFiles}
             onSelect={openFile}
             onNodeContext={(entry, x, y) => setNodeMenu({ entry, x, y })}
             onOpenProject={() => setHomeMode(true)}
             onNewProject={() => setShowNewProject(true)}
             onCloseProject={closeProject}
+            onPropertySettings={() => setShowProjectSettings(true)}
           />
         ) : activeView === "outline" ? (
           <div className="outline-panel">
@@ -919,6 +1056,7 @@ export function App(): JSX.Element {
         </section>
       ) : null}
       {newProjectModal}
+      {propertyModal}
       {docMenu !== null ? (
         <NodeMenu
           x={docMenu.x}
@@ -939,6 +1077,29 @@ export function App(): JSX.Element {
           bottom={settingsMenu.bottom}
           items={settingsItems}
           onClose={() => setSettingsMenu(null)}
+        />
+      ) : null}
+      {settingsOpen ? (
+        <SettingsModal
+          settings={settings}
+          providers={providers}
+          agents={agents}
+          initialParamTab={settingsTab}
+          onSave={async (next) => {
+            const saved = await saveSettings(next);
+            setSettings(saved);
+            applySettings(saved);
+            setNotice("已儲存設定");
+          }}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
+      {standardsOpen ? <StandardsModal onClose={() => setStandardsOpen(false)} /> : null}
+      {placeholder !== null ? (
+        <PlaceholderModal
+          title={placeholder.title}
+          items={placeholder.items}
+          onClose={() => setPlaceholder(null)}
         />
       ) : null}
       {nodeMenu !== null ? (

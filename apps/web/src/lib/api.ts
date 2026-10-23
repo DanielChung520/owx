@@ -553,3 +553,237 @@ export async function gitCommit(
     message,
   });
 }
+
+/** 專案中繼資料（`.owx-project.json` 擴充；缺欄由後端補預設）。 */
+export interface ProjectProperties {
+  id?: string | null;
+  name?: string;
+  name_en?: string | null;
+  slug?: string;
+  tags?: string[] | null;
+  created?: number | null;
+  properties?: string[];
+  base_dirs?: {
+    sample_ref?: string | null;
+    enabled?: boolean;
+    dirs?: string[];
+  };
+  writing_standard?: {
+    versioning?: boolean;
+    require_title?: boolean;
+    require_revision?: boolean;
+    require_change_log?: boolean;
+    confidentiality_default?: string;
+    compliance?: string[];
+    submit_checks?: { consistency?: boolean; objectivity?: boolean; audit?: boolean };
+  };
+  params?: { show_hidden?: boolean; autosave_minutes?: number };
+  worktree?: string;
+}
+
+/** 規範目錄條目（僅識別資料；NFR-22）。 */
+export interface StandardEntry {
+  id: string;
+  name: string;
+  title?: string;
+  issuer?: string;
+  year?: number;
+  required?: boolean;
+  license?: string;
+  full_text_allowed?: boolean;
+  acquisition?: string;
+  source_url?: string;
+}
+
+export interface StandardCategory {
+  id: string;
+  name: string;
+  required?: boolean;
+  standards: StandardEntry[];
+}
+
+export interface BaseDirsCatalog {
+  base_dirs: Record<string, { sample_ref: string; dirs: string[] }>;
+  properties: string[];
+}
+
+async function harnessGet<T>(endpoint: string): Promise<T> {
+  const res = await fetch(`${harnessBase}${endpoint}`);
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error ?? `harness ${endpoint}: ${res.status}`);
+  }
+  return (await res.json()) as T;
+}
+
+export async function projectGet(directory: string): Promise<ProjectProperties> {
+  return harnessGet<ProjectProperties>(
+    `/rpc/project/get?directory=${encodeURIComponent(directory)}`,
+  );
+}
+
+export async function projectUpdate(
+  directory: string,
+  patch: ProjectProperties,
+): Promise<ProjectProperties> {
+  return harnessPost<ProjectProperties>("/rpc/project/update", { directory, patch });
+}
+
+export async function projectBaseDirs(): Promise<BaseDirsCatalog> {
+  return harnessGet<BaseDirsCatalog>("/rpc/project/base-dirs");
+}
+
+export interface AppliedBaseDirs {
+  property: string;
+  dirs: string[];
+  created: string[];
+  skipped: string[];
+  failed: string[];
+}
+
+export async function projectApplyBaseDirs(
+  directory: string,
+  dirs: string[],
+): Promise<AppliedBaseDirs> {
+  return harnessPost<AppliedBaseDirs>("/rpc/project/base-dirs/apply", { directory, dirs });
+}
+
+export async function standardsList(): Promise<StandardCategory[]> {
+  const data = await harnessGet<{ categories?: StandardCategory[] }>("/rpc/standards/list");
+  return data.categories ?? [];
+}
+
+export async function standardsGet(id: string): Promise<{ id: string; content: string }> {
+  return harnessGet<{ id: string; content: string }>(
+    `/rpc/standards/get?id=${encodeURIComponent(id)}`,
+  );
+}
+
+export type ThemeMode = "system" | "light" | "dark";
+
+export interface GlobalSettings {
+  systemName: string;
+  knowledgeRoot: string | null;
+  logo: string | null;
+  accent: string | null;
+  defaultProviderId: string | null;
+  defaultModelId: string | null;
+  defaultAgent: string | null;
+}
+
+export interface PersonalSettings {
+  theme: ThemeMode;
+}
+
+export interface Settings {
+  global: GlobalSettings;
+  personal: PersonalSettings;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  global: {
+    systemName: "owx",
+    knowledgeRoot: null,
+    logo: null,
+    accent: null,
+    defaultProviderId: null,
+    defaultModelId: null,
+    defaultAgent: null,
+  },
+  personal: { theme: "system" },
+};
+
+export async function getSettings(): Promise<Settings> {
+  const res = await fetch(`${harnessBase}/rpc/settings`);
+  if (!res.ok) {
+    throw new Error(`getSettings failed: ${res.status}`);
+  }
+  return (await res.json()) as Settings;
+}
+
+export async function saveSettings(settings: Settings): Promise<Settings> {
+  return harnessPost<Settings>("/rpc/settings", settings);
+}
+
+export async function uploadLogo(
+  dataBase64: string,
+  ext: string,
+): Promise<{ logo: string }> {
+  return harnessPost<{ logo: string }>("/rpc/settings/logo", { dataBase64, ext });
+}
+
+export function logoUrl(logo: string | null): string | null {
+  return logo === null
+    ? null
+    : `${harnessBase}/rpc/settings/logo?v=${encodeURIComponent(logo)}`;
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+}
+
+export interface ModelProvider {
+  id: string;
+  name: string;
+  models: ModelInfo[];
+}
+
+export interface ModelsCatalog {
+  source: string;
+  providers: ModelProvider[];
+}
+
+export async function listModels(): Promise<ModelsCatalog> {
+  const res = await fetch(`${harnessBase}/rpc/models`);
+  if (!res.ok) {
+    throw new Error(`listModels failed: ${res.status}`);
+  }
+  return (await res.json()) as ModelsCatalog;
+}
+
+export async function listConnectedProviders(): Promise<string[]> {
+  const res = await fetch(`${baseUrl}/provider`);
+  if (!res.ok) {
+    throw new Error(`listConnectedProviders failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { connected?: string[] };
+  return data.connected ?? [];
+}
+
+export async function setProviderApiKey(
+  providerID: string,
+  key: string,
+): Promise<void> {
+  const res = await fetch(`${baseUrl}/auth/${encodeURIComponent(providerID)}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "api", key }),
+  });
+  if (!res.ok) {
+    throw new Error(`setProviderApiKey failed: ${res.status}`);
+  }
+}
+
+export async function setProviderBaseUrl(
+  providerID: string,
+  baseURL: string,
+): Promise<void> {
+  const res = await fetch(`${baseUrl}/global/config`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ provider: { [providerID]: { options: { baseURL } } } }),
+  });
+  if (!res.ok) {
+    throw new Error(`setProviderBaseUrl failed: ${res.status}`);
+  }
+}
+
+export async function removeProviderAuth(providerID: string): Promise<void> {
+  const res = await fetch(`${baseUrl}/auth/${encodeURIComponent(providerID)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`removeProviderAuth failed: ${res.status}`);
+  }
+}

@@ -5,10 +5,12 @@
 //! 契約見 `docs/design/interfaces.md`；決策見 `docs/adr/ADR-0004-harness-opencode-boundary.md`。
 
 pub mod opencode;
+pub mod projects;
 
 use axum::{
     extract::{Json, Query, State},
-    http::StatusCode,
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
     routing::{get, post},
     Router,
 };
@@ -32,6 +34,9 @@ pub struct AppState {
     categories: Arc<CategoryRegistry>,
     opencode: Option<opencode::OpenCodeClient>,
     knowledge_dir: PathBuf,
+    config_dir: PathBuf,
+    sample_dir: PathBuf,
+    standard_file: PathBuf,
 }
 
 impl AppState {
@@ -42,6 +47,9 @@ impl AppState {
             categories: Arc::new(categories),
             opencode: None,
             knowledge_dir: default_knowledge_dir(),
+            config_dir: owx_config::config_dir(),
+            sample_dir: default_sample_dir(),
+            standard_file: default_standard_file(),
         }
     }
 
@@ -52,6 +60,22 @@ impl AppState {
 
     pub fn with_knowledge_dir(mut self, dir: PathBuf) -> Self {
         self.knowledge_dir = dir;
+        self
+    }
+
+    pub fn with_config_dir(mut self, dir: PathBuf) -> Self {
+        self.config_dir = dir;
+        self
+    }
+
+    pub fn with_sample_dir(mut self, dir: PathBuf) -> Self {
+        self.standard_file = dir.join("owx-Standard.json");
+        self.sample_dir = dir;
+        self
+    }
+
+    pub fn with_standard_file(mut self, file: PathBuf) -> Self {
+        self.standard_file = file;
         self
     }
 
@@ -79,8 +103,14 @@ impl AppState {
             skills: Vec::new(),
             allow_delegate: true,
         });
-        let state = Self::new(ToolPolicy::new(rules), threshold, categories)
-            .with_knowledge_dir(knowledge_dir_from_env());
+        let mut state = Self::new(ToolPolicy::new(rules), threshold, categories)
+            .with_knowledge_dir(knowledge_dir_from_env())
+            .with_sample_dir(sample_dir_from_env());
+        if let Ok(file) = std::env::var("OWX_STANDARD_FILE") {
+            if !file.trim().is_empty() {
+                state = state.with_standard_file(PathBuf::from(file));
+            }
+        }
         match std::env::var("OWX_OPENCODE_URL") {
             Ok(url) if !url.is_empty() => state.with_opencode(opencode::OpenCodeClient::new(url)),
             _ => state,
@@ -105,6 +135,18 @@ pub fn router(state: AppState) -> Router {
         .route("/rpc/fallback", post(rpc_fallback))
         .route("/rpc/project/create", post(rpc_project_create))
         .route("/rpc/knowledge/list", get(rpc_knowledge_list))
+        .route("/rpc/project/get", get(projects::rpc_project_get))
+        .route("/rpc/project/update", post(projects::rpc_project_update))
+        .route(
+            "/rpc/project/base-dirs",
+            get(projects::rpc_project_base_dirs),
+        )
+        .route(
+            "/rpc/project/base-dirs/apply",
+            post(projects::rpc_project_base_dirs_apply),
+        )
+        .route("/rpc/standards/list", get(projects::rpc_standards_list))
+        .route("/rpc/standards/get", get(projects::rpc_standards_get))
         .route("/rpc/git/status", get(rpc_git_status))
         .route("/rpc/git/commit", post(rpc_git_commit))
         .route("/rpc/fs/mkdir", post(rpc_fs_mkdir))
@@ -117,6 +159,15 @@ pub fn router(state: AppState) -> Router {
         .route("/rpc/share", post(rpc_not_configured))
         .route("/rpc/archive/create", post(rpc_archive_create))
         .route("/rpc/archive/extract", post(rpc_archive_extract))
+        .route("/rpc/models", get(rpc_models))
+        .route(
+            "/rpc/settings",
+            get(rpc_settings_get).post(rpc_settings_post),
+        )
+        .route(
+            "/rpc/settings/logo",
+            get(rpc_settings_logo_get).post(rpc_settings_logo_upload),
+        )
         .route("/mcp", post(mcp))
         .with_state(state)
 }
@@ -359,6 +410,118 @@ fn knowledge_dir_from_env() -> PathBuf {
         .unwrap_or_else(default_knowledge_dir)
 }
 
+fn default_sample_dir() -> PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    Path::new(&home).join("owx-sample")
+}
+
+fn sample_dir_from_env() -> PathBuf {
+    std::env::var("OWX_SAMPLE_DIR")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(default_sample_dir)
+}
+
+fn default_standard_file() -> PathBuf {
+    std::env::var("OWX_STANDARD_FILE")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| default_sample_dir().join("owx-Standard.json"))
+}
+
+fn resolved_knowledge_dir(state: &AppState) -> PathBuf {
+    owx_config::Settings::load(&state.config_dir)
+        .global
+        .knowledge_root
+        .filter(|root| !root.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| state.knowledge_dir.clone())
+}
+
+const DEFAULT_MODELS_URL: &str = "https://models.opencode.ai";
+
+fn models_source() -> String {
+    std::env::var("OPENCODE_MODELS_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_MODELS_URL.to_string())
+}
+
+fn models_file_from(path: Option<&str>, xdg: Option<&str>, home: Option<&str>) -> PathBuf {
+    if let Some(file) = path.filter(|value| !value.trim().is_empty()) {
+        return PathBuf::from(file);
+    }
+    let cache = xdg
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            let home = home.filter(|value| !value.trim().is_empty()).unwrap_or(".");
+            Path::new(home).join(".cache")
+        });
+    cache.join("opencode").join("models.json")
+}
+
+fn models_file() -> PathBuf {
+    models_file_from(
+        std::env::var("OPENCODE_MODELS_PATH").ok().as_deref(),
+        std::env::var("XDG_CACHE_HOME").ok().as_deref(),
+        std::env::var("HOME").ok().as_deref(),
+    )
+}
+
+fn normalize_models(raw: &serde_json::Value) -> Vec<serde_json::Value> {
+    let mut providers: Vec<serde_json::Value> = raw
+        .as_object()
+        .map(|map| {
+            map.iter()
+                .map(|(id, entry)| {
+                    let name = entry
+                        .get("name")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or(id);
+                    let models: Vec<serde_json::Value> = entry
+                        .get("models")
+                        .and_then(|value| value.as_object())
+                        .map(|models| {
+                            models
+                                .iter()
+                                .map(|(model_id, model)| {
+                                    let model_name = model
+                                        .get("name")
+                                        .and_then(|value| value.as_str())
+                                        .unwrap_or(model_id);
+                                    json!({ "id": model_id, "name": model_name })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    json!({ "id": id, "name": name, "models": models })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    providers.sort_by(|a, b| {
+        a["id"]
+            .as_str()
+            .unwrap_or("")
+            .cmp(b["id"].as_str().unwrap_or(""))
+    });
+    providers
+}
+
+async fn rpc_models() -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let text = std::fs::read_to_string(models_file())
+        .map_err(|_| fail(StatusCode::BAD_GATEWAY, "models_unavailable"))?;
+    let raw: serde_json::Value =
+        serde_json::from_str(&text).map_err(|_| fail(StatusCode::BAD_GATEWAY, "models_invalid"))?;
+    Ok(Json(json!({
+        "source": models_source(),
+        "providers": normalize_models(&raw),
+    })))
+}
+
 fn valid_slug(slug: &str) -> bool {
     !slug.is_empty()
         && slug.len() <= 64
@@ -397,8 +560,23 @@ struct CreateProjectBody {
     tags: Vec<String>,
 }
 
+/// 建立專案時生成的預設「一般性規範」檔名。
+const DEFAULT_AGENTS_FILENAME: &str = "AGENTS.md";
+/// 樣本庫中的範本路徑（隨 `OWX_SAMPLE_DIR` 覆寫）。
+const AGENTS_TEMPLATE_REL: &str = "templates/AGENTS.md";
+/// 範本缺檔時的最小內建內容（正式內容以樣本庫為準）。
+const AGENTS_FALLBACK: &str = "# {{project_name}}\n\n> 一般性規範（owx 預設）。\n\n- 文件優先：決策先落文件。\n- 測試是唯一合約：沒測試 = 沒做完。\n- 禁止硬編碼；設定走 config／環境變數。\n";
+
+/// 讀取一般性規範範本並帶入專案名稱；缺檔時退回內建最小內容。
+fn default_agents_md(sample_dir: &Path, name: &str) -> String {
+    let template = std::fs::read_to_string(sample_dir.join(AGENTS_TEMPLATE_REL))
+        .unwrap_or_else(|_| AGENTS_FALLBACK.to_string());
+    template.replace("{{project_name}}", name)
+}
+
 fn create_project(
     base: &Path,
+    sample_dir: &Path,
     name: &str,
     slug: &str,
     tags: &[String],
@@ -426,6 +604,10 @@ fn create_project(
         dir.join(".owx-project.json"),
         serde_json::to_vec_pretty(&meta).unwrap_or_default(),
     );
+    let _ = std::fs::write(
+        dir.join(DEFAULT_AGENTS_FILENAME),
+        default_agents_md(sample_dir, name),
+    );
     let _ = std::process::Command::new("git")
         .arg("init")
         .arg("-q")
@@ -445,9 +627,15 @@ async fn rpc_project_create(
     State(state): State<AppState>,
     Json(body): Json<CreateProjectBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    create_project(&state.knowledge_dir, &body.name, &body.slug, &body.tags)
-        .map(Json)
-        .map_err(|(status, code)| (status, Json(json!({ "error": code }))))
+    create_project(
+        &resolved_knowledge_dir(&state),
+        &state.sample_dir,
+        &body.name,
+        &body.slug,
+        &body.tags,
+    )
+    .map(Json)
+    .map_err(|(status, code)| (status, Json(json!({ "error": code }))))
 }
 
 fn fail(status: StatusCode, code: &str) -> (StatusCode, Json<serde_json::Value>) {
@@ -753,6 +941,96 @@ async fn rpc_not_configured() -> (StatusCode, Json<serde_json::Value>) {
     fail(StatusCode::NOT_IMPLEMENTED, "not_configured")
 }
 
+const MAX_LOGO_BYTES: usize = 2 * 1024 * 1024;
+#[derive(serde::Deserialize)]
+struct LogoBody {
+    #[serde(rename = "dataBase64")]
+    data_base64: String,
+    ext: String,
+}
+
+fn normalize_logo_ext(ext: &str) -> Option<&'static str> {
+    match ext.trim().to_lowercase().as_str() {
+        "png" => Some("png"),
+        "jpg" => Some("jpg"),
+        "jpeg" => Some("jpeg"),
+        "svg" => Some("svg"),
+        "webp" => Some("webp"),
+        _ => None,
+    }
+}
+
+fn logo_content_type(name: &str) -> &'static str {
+    let lower = name.to_lowercase();
+    if lower.ends_with(".png") {
+        "image/png"
+    } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if lower.ends_with(".svg") {
+        "image/svg+xml"
+    } else if lower.ends_with(".webp") {
+        "image/webp"
+    } else {
+        "application/octet-stream"
+    }
+}
+
+async fn rpc_settings_get(State(state): State<AppState>) -> Json<owx_config::Settings> {
+    Json(owx_config::Settings::load(&state.config_dir))
+}
+
+async fn rpc_settings_post(
+    State(state): State<AppState>,
+    Json(body): Json<owx_config::Settings>,
+) -> Result<Json<owx_config::Settings>, (StatusCode, Json<serde_json::Value>)> {
+    if let Err(reason) = body.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "invalid_settings", "detail": reason })),
+        ));
+    }
+    body.save(&state.config_dir)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "write_failed"))?;
+    Ok(Json(body))
+}
+
+async fn rpc_settings_logo_upload(
+    State(state): State<AppState>,
+    Json(body): Json<LogoBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let ext = normalize_logo_ext(&body.ext)
+        .ok_or_else(|| fail(StatusCode::BAD_REQUEST, "invalid_image"))?;
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(body.data_base64.as_bytes())
+        .map_err(|_| fail(StatusCode::BAD_REQUEST, "invalid_image"))?;
+    if decoded.len() > MAX_LOGO_BYTES {
+        return Err(fail(StatusCode::PAYLOAD_TOO_LARGE, "too_large"));
+    }
+    std::fs::create_dir_all(&state.config_dir)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "write_failed"))?;
+    let file_name = format!("logo.{ext}");
+    std::fs::write(state.config_dir.join(&file_name), &decoded)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "write_failed"))?;
+    let mut settings = owx_config::Settings::load(&state.config_dir);
+    settings.global.logo = Some(file_name.clone());
+    settings
+        .save(&state.config_dir)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "write_failed"))?;
+    Ok(Json(json!({ "logo": file_name })))
+}
+
+async fn rpc_settings_logo_get(
+    State(state): State<AppState>,
+) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
+    let settings = owx_config::Settings::load(&state.config_dir);
+    let Some(name) = settings.global.logo else {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    };
+    let bytes = std::fs::read(state.config_dir.join(&name))
+        .map_err(|_| fail(StatusCode::NOT_FOUND, "not_found"))?;
+    Ok(([(header::CONTENT_TYPE, logo_content_type(&name))], bytes).into_response())
+}
+
 #[derive(serde::Deserialize)]
 struct GitStatusQuery {
     directory: String,
@@ -849,7 +1127,8 @@ async fn rpc_git_commit(
 
 async fn rpc_knowledge_list(State(state): State<AppState>) -> Json<serde_json::Value> {
     let mut projects = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(&state.knowledge_dir) {
+    let base = resolved_knowledge_dir(&state);
+    if let Ok(entries) = std::fs::read_dir(&base) {
         for entry in entries.flatten() {
             let path = entry.path();
             if !path.is_dir() {
@@ -928,7 +1207,14 @@ mod tests {
     #[test]
     fn creates_project_dir_with_metadata() {
         let base = std::env::temp_dir().join(format!("owx-test-{}", now_millis()));
-        let created = create_project(&base, "測試專案", "my-doc", &["a".into(), "b".into()])
+        let sample = std::env::temp_dir().join(format!("owx-sample-{}", now_millis()));
+        std::fs::create_dir_all(sample.join("templates")).unwrap();
+        std::fs::write(
+            sample.join("templates/AGENTS.md"),
+            "# {{project_name}}\n\n一般性規範\n",
+        )
+        .unwrap();
+        let created = create_project(&base, &sample, "測試專案", "my-doc", &["a".into(), "b".into()])
             .expect("create should succeed");
         assert_eq!(created["slug"], "my-doc");
         let dir = base.join("my-doc");
@@ -937,22 +1223,28 @@ mod tests {
         let meta: serde_json::Value = serde_json::from_slice(&raw).expect("valid json");
         assert_eq!(meta["name"], "測試專案");
         assert_eq!(meta["tags"][1], "b");
+        let agents = std::fs::read_to_string(dir.join("AGENTS.md")).expect("agents written");
+        assert!(agents.contains("測試專案"));
         let _ = std::fs::remove_dir_all(&base);
+        let _ = std::fs::remove_dir_all(&sample);
     }
 
     #[test]
     fn rejects_duplicate_and_invalid() {
         let base = std::env::temp_dir().join(format!("owx-test-dup-{}", now_millis()));
-        assert!(create_project(&base, "n", "dup", &[]).is_ok());
+        let sample = std::env::temp_dir().join(format!("owx-sample-dup-{}", now_millis()));
+        std::fs::create_dir_all(&sample).unwrap();
+        assert!(create_project(&base, &sample, "n", "dup", &[]).is_ok());
         assert_eq!(
-            create_project(&base, "n", "dup", &[]).unwrap_err().1,
+            create_project(&base, &sample, "n", "dup", &[]).unwrap_err().1,
             "already_exists"
         );
         assert_eq!(
-            create_project(&base, "n", "Bad Slug", &[]).unwrap_err().1,
+            create_project(&base, &sample, "n", "Bad Slug", &[]).unwrap_err().1,
             "invalid_slug"
         );
         let _ = std::fs::remove_dir_all(&base);
+        let _ = std::fs::remove_dir_all(&sample);
     }
 }
 
@@ -1094,5 +1386,130 @@ mod node_ops_tests {
         .expect("commit");
         assert_eq!(second.0["committed"], json!(false));
         let _ = std::fs::remove_dir_all(&root);
+    }
+}
+
+#[cfg(test)]
+mod settings_tests {
+    use super::*;
+
+    fn tmp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("owx-settings-{}-{}", name, now_millis()));
+        std::fs::create_dir_all(&dir).expect("tmp");
+        dir
+    }
+
+    #[test]
+    fn resolved_knowledge_dir_falls_back_to_state_dir() {
+        let base = tmp_dir("fallback");
+        let state = AppState::default()
+            .with_knowledge_dir(base.join("know"))
+            .with_config_dir(base.join("cfg"));
+        assert_eq!(resolved_knowledge_dir(&state), base.join("know"));
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn resolved_knowledge_dir_uses_override() {
+        let base = tmp_dir("override");
+        let cfg = base.join("cfg");
+        let mut settings = owx_config::Settings::default();
+        settings.global.knowledge_root = Some(base.join("custom").to_string_lossy().to_string());
+        settings.save(&cfg).expect("save");
+        let state = AppState::default()
+            .with_knowledge_dir(base.join("know"))
+            .with_config_dir(cfg);
+        assert_eq!(resolved_knowledge_dir(&state), base.join("custom"));
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[tokio::test]
+    async fn settings_get_returns_defaults() {
+        let base = tmp_dir("get");
+        let state = AppState::default().with_config_dir(base.join("cfg"));
+        let got = rpc_settings_get(State(state)).await;
+        assert_eq!(got.0.global.system_name, "owx");
+        assert_eq!(got.0.personal.theme, owx_config::Theme::System);
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[tokio::test]
+    async fn settings_post_rejects_invalid_and_persists_valid() {
+        let base = tmp_dir("post");
+        let cfg = base.join("cfg");
+        let state = AppState::default().with_config_dir(cfg.clone());
+
+        let mut bad = owx_config::Settings::default();
+        bad.global.accent = Some("red".into());
+        let err = rpc_settings_post(State(state.clone()), Json(bad))
+            .await
+            .expect_err("invalid accent");
+        assert_eq!(err.0, StatusCode::BAD_REQUEST);
+
+        let mut good = owx_config::Settings::default();
+        good.global.system_name = "acme".into();
+        good.global.accent = Some("#034cff".into());
+        let saved = rpc_settings_post(State(state), Json(good))
+            .await
+            .expect("save");
+        assert_eq!(saved.0.global.system_name, "acme");
+        assert_eq!(owx_config::Settings::load(&cfg).global.system_name, "acme");
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[tokio::test]
+    async fn logo_upload_then_get_roundtrip() {
+        let base = tmp_dir("logo");
+        let state = AppState::default().with_config_dir(base.join("cfg"));
+        let png = base64::engine::general_purpose::STANDARD.encode(b"\x89PNG\r\n\x1a\n");
+        let up = rpc_settings_logo_upload(
+            State(state.clone()),
+            Json(LogoBody {
+                data_base64: png,
+                ext: "PNG".into(),
+            }),
+        )
+        .await
+        .expect("upload");
+        assert_eq!(up.0["logo"], json!("logo.png"));
+
+        let resp = rpc_settings_logo_get(State(state)).await.expect("get");
+        assert_eq!(resp.status(), StatusCode::OK);
+
+        let empty = AppState::default().with_config_dir(base.join("empty"));
+        assert_eq!(
+            rpc_settings_logo_get(State(empty)).await.unwrap_err().0,
+            StatusCode::NOT_FOUND
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn normalize_models_shapes_and_sorts() {
+        let raw = json!({
+            "b": { "name": "B", "models": { "m2": { "name": "M2" } } },
+            "a": { "name": "A", "models": { "m1": {} } }
+        });
+        let list = normalize_models(&raw);
+        assert_eq!(list[0]["id"], "a");
+        assert_eq!(list[0]["models"][0]["id"], "m1");
+        assert_eq!(list[0]["models"][0]["name"], "m1");
+        assert_eq!(list[1]["id"], "b");
+    }
+
+    #[test]
+    fn models_file_resolution() {
+        assert_eq!(
+            models_file_from(Some("/x/models.json"), None, None),
+            PathBuf::from("/x/models.json")
+        );
+        assert_eq!(
+            models_file_from(None, Some("/xdg"), None),
+            PathBuf::from("/xdg/opencode/models.json")
+        );
+        assert_eq!(
+            models_file_from(None, None, Some("/home/u")),
+            PathBuf::from("/home/u/.cache/opencode/models.json")
+        );
     }
 }

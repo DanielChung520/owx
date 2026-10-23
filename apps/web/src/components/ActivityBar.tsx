@@ -44,10 +44,47 @@ function GraphIcon(): JSX.Element {
 function SettingsIcon(): JSX.Element {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.2">
-        <circle cx="8" cy="8" r="2.2" />
-        <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3" />
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <circle cx="8" cy="8" r="3.8" />
+        <path d="M12.2 8h2.2M8 12.2v2.2M3.8 8H1.6M8 3.8V1.6M10.97 10.97l1.56 1.56M5.03 10.97l-1.56 1.56M10.97 5.03l1.56-1.56M5.03 5.03L3.47 3.47" />
       </g>
+    </svg>
+  );
+}
+
+function AvatarIcon(): JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.2">
+        <circle cx="8" cy="8" r="6.5" />
+        <circle cx="8" cy="6.1" r="2.1" />
+        <path d="M3.9 13.1a4.6 4.6 0 0 1 8.2 0" strokeLinecap="round" />
+      </g>
+    </svg>
+  );
+}
+
+function SunIcon(): JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+        <circle cx="8" cy="8" r="3" />
+        <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.05 3.05l1.13 1.13M11.82 11.82l1.13 1.13M12.95 3.05l-1.13 1.13M4.18 11.82l-1.13 1.13" />
+      </g>
+    </svg>
+  );
+}
+
+function MoonIcon(): JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M13.4 9.7A5.6 5.6 0 0 1 6.3 2.6a5.6 5.6 0 1 0 7.1 7.1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -55,12 +92,18 @@ function SettingsIcon(): JSX.Element {
 export function ActivityBar({
   active,
   collapsed,
+  dark,
   onSelect,
+  onProfile,
+  onTheme,
   onSettingsMenu,
 }: {
   active: SidePanel;
   collapsed: boolean;
+  dark: boolean;
   onSelect: (panel: SidePanel) => void;
+  onProfile: () => void;
+  onTheme: () => void;
   onSettingsMenu: (anchor: { right: number; bottom: number }) => void;
 }): JSX.Element {
   return (
@@ -96,6 +139,24 @@ export function ActivityBar({
         <GraphIcon />
       </button>
       <div className="activitybar-bottom">
+        <button
+          type="button"
+          className="activity activity-avatar"
+          aria-label="個人頭像"
+          title="個人頭像"
+          onClick={onProfile}
+        >
+          <AvatarIcon />
+        </button>
+        <button
+          type="button"
+          className="activity"
+          aria-label="主題樣式"
+          title={dark ? "切換為淺色主題" : "切換為深色主題"}
+          onClick={onTheme}
+        >
+          {dark ? <SunIcon /> : <MoonIcon />}
+        </button>
         <button
           type="button"
           className="activity"

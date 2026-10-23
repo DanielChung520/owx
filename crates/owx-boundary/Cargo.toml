@@ -7,6 +7,7 @@ publish.workspace = true
 
 [dependencies]
 owx-core = { path = "../owx-core" }
+owx-config = { path = "../owx-config" }
 owx-tools = { path = "../owx-tools" }
 owx-discipline = { path = "../owx-discipline" }
 owx-orchestrator = { path = "../owx-orchestrator" }

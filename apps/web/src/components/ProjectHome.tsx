@@ -3,18 +3,25 @@ import type { KnowledgeProject } from "../lib/api";
 export function ProjectHome({
   projects,
   currentRoot,
+  systemName = "owx",
+  logoSrc = null,
   onOpen,
   onNew,
 }: {
   projects: readonly KnowledgeProject[];
   currentRoot: string;
+  systemName?: string;
+  logoSrc?: string | null;
   onOpen: (worktree: string) => void;
   onNew: () => void;
 }): JSX.Element {
   return (
     <div className="project-home">
       <header className="home-header">
-        <span className="brand">owx</span>
+        {logoSrc !== null ? (
+          <img className="brand-logo" src={logoSrc} alt={systemName} height={22} />
+        ) : null}
+        <span className="brand">{systemName}</span>
         <h1 className="home-title">專案</h1>
         <button type="button" className="btn-primary" onClick={onNew}>
           + 新增專案

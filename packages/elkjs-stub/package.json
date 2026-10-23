@@ -1,0 +1,13 @@
+{
+  "name": "elkjs",
+  "version": "0.9.3",
+  "description": "License-compatible stand-in for elkjs (ELK layout) — not an ELK implementation.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./lib/elk.bundled.js": "./index.js",
+    "./package.json": "./package.json"
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listDirectory, type FileEntry } from "../lib/api";
+import { filterHidden } from "../lib/hidden";
 import { FileIcon } from "./FileIcon";
 import { ProjectMenu } from "./ProjectMenu";
 
@@ -11,12 +12,14 @@ function projectLabel(worktree: string): string {
 function TreeNode({
   entry,
   root,
+  showHidden,
   gitFiles,
   onSelect,
   onNodeContext,
 }: {
   entry: FileEntry;
   root: string;
+  showHidden: boolean;
   gitFiles: Record<string, string>;
   onSelect: (entry: FileEntry) => void;
   onNodeContext: (entry: FileEntry, x: number, y: number) => void;
@@ -25,22 +28,35 @@ function TreeNode({
   const [children, setChildren] = useState<FileEntry[] | null>(null);
   const [error, setError] = useState(false);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = filterHidden(await listDirectory(entry.path, root), showHidden);
+        if (!cancelled) {
+          setChildren(list);
+          setError(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, showHidden, entry.path, root]);
+
   const toggle = (): void => {
     if (entry.type !== "directory") {
       onSelect(entry);
       return;
     }
-    const next = !open;
-    setOpen(next);
-    if (next && children === null) {
-      void (async () => {
-        try {
-          setChildren(await listDirectory(entry.path, root));
-        } catch {
-          setError(true);
-        }
-      })();
-    }
+    setOpen((prev) => !prev);
   };
 
   return (
@@ -74,6 +90,7 @@ function TreeNode({
               key={child.path}
               entry={child}
               root={root}
+              showHidden={showHidden}
               gitFiles={gitFiles}
               onSelect={onSelect}
               onNodeContext={onNodeContext}
@@ -89,22 +106,26 @@ export function FileExplorer({
   root,
   projectName,
   reloadKey,
+  showHidden,
   gitFiles,
   onSelect,
   onNodeContext,
   onOpenProject,
   onNewProject,
   onCloseProject,
+  onPropertySettings,
 }: {
   root: string;
   projectName: string;
   reloadKey: number;
+  showHidden: boolean;
   gitFiles: Record<string, string>;
   onSelect: (entry: FileEntry) => void;
   onNodeContext: (entry: FileEntry, x: number, y: number) => void;
   onOpenProject: () => void;
   onNewProject: () => void;
   onCloseProject: () => void;
+  onPropertySettings: () => void;
 }): JSX.Element {
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +138,7 @@ export function FileExplorer({
       try {
         const list = await listDirectory(".", root);
         if (!cancelled) {
-          setEntries(list);
+          setEntries(filterHidden(list, showHidden));
         }
       } catch (cause) {
         if (!cancelled) {
@@ -128,7 +149,7 @@ export function FileExplorer({
     return () => {
       cancelled = true;
     };
-  }, [root, reloadKey]);
+  }, [root, reloadKey, showHidden]);
 
   return (
     <div className="explorer">
@@ -142,6 +163,7 @@ export function FileExplorer({
           onOpen={onOpenProject}
           onNew={onNewProject}
           onClose={onCloseProject}
+          onPropertySettings={onPropertySettings}
         />
       </div>
       {error !== null ? <p className="panel-empty">{error}</p> : null}
@@ -151,6 +173,7 @@ export function FileExplorer({
             key={entry.path}
             entry={entry}
             root={root}
+            showHidden={showHidden}
             gitFiles={gitFiles}
             onSelect={onSelect}
             onNodeContext={onNodeContext}

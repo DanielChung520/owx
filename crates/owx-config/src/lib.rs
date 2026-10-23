@@ -1,4 +1,8 @@
-//! owx 設定分層與 profile 解析（FR-F）。
+//! owx 設定分層與 profile 解析（FR-F）＋ UI／系統設定（FR-H-27/28）。
+
+pub mod settings;
+
+pub use settings::{config_dir, GlobalSettings, PersonalSettings, Settings, Theme};
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

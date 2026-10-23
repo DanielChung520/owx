@@ -583,6 +583,7 @@ dependencies = [
  "base64 0.22.1",
  "flate2",
  "http-body-util",
+ "owx-config",
  "owx-core",
  "owx-discipline",
  "owx-orchestrator",
