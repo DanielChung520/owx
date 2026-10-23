@@ -1,0 +1,271 @@
+{
+  "app": {
+    "name": "KAC",
+    "tagline": "知識資產中心"
+  },
+  "nav": {
+    "dashboard": "儀表板",
+    "documents": "文件",
+    "graph": "圖譜",
+    "graphVector": "圖譜向量",
+    "retrieve": "向量查詢",
+    "eval": "檢索驗證",
+    "knowledge": "知識本體",
+    "settings": "系統設置",
+    "account": "賬號權限",
+    "sidebarExpand": "展開側邊欄",
+    "sidebarCollapse": "收合側邊欄",
+    "anchor": "錨定工作區",
+    "help": "Help"
+  },
+  "header": {
+    "search": "搜尋",
+    "notifications": "通知",
+    "help": "說明"
+  },
+  "auth": {
+    "login": "登錄",
+    "logout": "登出",
+    "email": "電子郵件",
+    "password": "密碼",
+    "submit": "提交",
+    "profile": "個人資料",
+    "switchScope": "切換工作區",
+    "loginHint": "輸入任何 email + 8 位以上密碼即可登入（mock）",
+    "invalidCredentials": "帳號或密碼錯誤",
+    "username": "帳號"
+  },
+  "dashboard": {
+    "title": "儀表板",
+    "documents": "文件總數",
+    "entities": "實體數",
+    "relations": "關係數",
+    "recentFiles": "最近編輯文件",
+    "quickLinks": "快速連結",
+    "kpiProjects": "總專案數",
+    "kpiFiles": "總檔案數",
+    "kpiNodes": "總知識節點",
+    "kpiRelations": "關係數",
+    "projectsTitle": "專案",
+    "filesTitle": "專案文件",
+    "lastOpened": "最近開啟",
+    "version": "版本",
+    "editedAt": "最近編輯",
+    "addProject": "增加專案",
+    "modalTitle": "新增專案",
+    "projectName": "專案名稱",
+    "shortName": "簡稱",
+    "description": "概述",
+    "projectType": "專案類型",
+    "selectType": "請選擇專案類型",
+    "createPcm": "是否創建 PCM"
+  },
+  "documents": {
+    "title": "文件清單",
+    "upload": "上傳文件",
+    "name": "名稱",
+    "type": "類型",
+    "size": "大小",
+    "uploadedAt": "上傳時間",
+    "actions": "操作",
+    "sort": "排序方式",
+    "sortUpdatedAt": "最近修改",
+    "sortCreatedAt": "創建日期",
+    "summary": "摘要",
+    "tags": "標籤",
+    "tagsPlaceholder": "以逗號分隔多個標籤",
+    "copyFilename": "複製文件名",
+    "share": "分享",
+    "export": "匯出",
+    "authorize": "授權",
+    "details": "詳情",
+    "deleteConfirmHint": "此操作無法復原，請輸入大寫 DELETE 以確認刪除",
+    "shareView": "只能查詢",
+    "shareEdit": "可以編輯",
+    "copyLink": "複製連結",
+    "regenerate": "重新產生",
+    "backToList": "返回文件清單",
+    "preview": "預覽（前 500 字）",
+    "createdAt": "建立時間",
+    "summaryUnavailable": "摘要不可用",
+    "attributes": "屬性",
+    "attributesFilename": "文件名稱",
+    "attributesType": "類型",
+    "attributesSize": "大小",
+    "attributesCreatedAt": "建立時間",
+    "attributesUpdatedAt": "更新時間",
+    "attributesTags": "標籤",
+    "attributesSummary": "摘要",
+    "attributesPreview": "預覽",
+    "outline": "大綱",
+    "noOutline": "無大綱",
+    "pageLabel": "第{{n}}頁",
+    "fullscreen": "全螢幕",
+    "regenerateOutline": "重新生成大綱（VLM）",
+    "regenerateOutlineTip": "以 VLM 逐頁辨識標題，取代 PDF 書籤大綱",
+    "vlmOutlineLoading": "VLM 正在生成大綱…",
+    "vlmOutlineFailed": "VLM 大綱生成失敗"
+  },
+  "graph": {
+    "title": "圖譜視覺化",
+    "placeholder": "圖譜視覺化（佔位）"
+  },
+  "graphVector": {
+    "title": "圖譜向量",
+    "subtitle": "圖譜 + 向量統一視圖",
+    "layout": "布局",
+    "layouts": {
+      "list": "實體列表",
+      "neighborhood": "鄰域",
+      "path": "路徑查詢"
+    },
+    "pathQuery": "路徑查詢",
+    "neighborhood": "鄰域",
+    "entities": "實體",
+    "noEntities": "尚無實體",
+    "stats": {
+      "entities": "實體",
+      "relations": "關係",
+      "communities": "社群",
+      "chunks": "向量區塊"
+    },
+    "tabs": {
+      "graph": "圖譜",
+      "vector": "向量"
+    },
+    "generate": "生成",
+    "regenerate": "重新生成",
+    "generating": "生成中...",
+    "jobStatus": "任務狀態"
+  },
+  "retrieve": {
+    "title": "向量查詢",
+    "queryPlaceholder": "輸入查詢…",
+    "search": "搜尋",
+    "results": "結果",
+    "notAvailable": "向量檢索後端未接入（Phase 1）"
+  },
+  "eval": {
+    "title": "檢索驗證",
+    "placeholder": "檢索驗證（佔位）"
+  },
+  "knowledge": {
+    "title": "知識本體",
+    "placeholder": "知識庫（佔位）",
+    "notAvailable": "知識圖譜後端未接入（Phase 1）",
+    "entityCount": "實體",
+    "relationCount": "關係",
+    "entities": "實體",
+    "relations": "關係",
+    "noEntities": "尚未抽取實體",
+    "noRelations": "尚未抽取關係",
+    "tabs": {
+      "generator": "生成",
+      "library": "庫存",
+      "review": "審核"
+    },
+    "generator": {
+      "corpusSource": "Corpus 來源",
+      "userNotes": "使用者 notes（選填）",
+      "projectFiles": "Project 文件",
+      "knowledgeTypes": "知識類型",
+      "knowledgeTypesPlaceholder": "自由輸入知識類型，Enter 或 , ， | 、 分隔（例：系統文件、系統規格書、貿易文件）",
+      "fileTypes": "知識類型",
+      "fileTypesPlaceholder": "自由輸入知識類型，Enter 或 , ， | 、 分隔",
+      "tags": "標籤",
+      "tagsPlaceholder": "輸入或選擇標籤",
+      "useCases": "應用場景",
+      "useCasesPlaceholder": "輸入或選擇應用場景",
+      "webResearch": "上網深研",
+      "alignPreview": "外部標準對齊預覽",
+      "alignHint": "AI 將依知識類型自動對齊 Schema.org + Wikidata，可上網檢索驗證，生成後每類可見外部錨",
+      "alignRecommendation": "建議知識類型 3-6 個，每個以領域概念為單位（例：貿易文件、庫存批次），過細會降低 NER 準確度",
+      "alignWikidataPlaceholder": "Q-ID 將於生成時自動檢索",
+      "alignNoMatch": "無對應 Schema.org 建議",
+      "startGenerate": "開始生成 ontology",
+      "generating": "生成中..."
+    },
+    "library": {
+      "view": "檢視",
+      "viewList": "列表",
+      "viewGraph": "圖譜",
+      "diff": "差異",
+      "assign": "指派",
+      "approved": "已核准",
+      "pending": "審核中",
+      "rejected": "已拒絕",
+      "noOntologies": "尚無 ontology"
+    },
+    "external": {
+      "provenance": "來源",
+      "anchoredCount": "{{anchored}} 已對齊 / {{total}} 總數",
+      "wikidata": "Wikidata",
+      "schemaOrg": "Schema.org",
+      "skos": "SKOS"
+    },
+    "graph": {
+      "force": "力導向",
+      "tree": "樹狀",
+      "nodes": "節點",
+      "edges": "邊",
+      "legend": "圖例",
+      "noData": "無圖譜資料",
+      "noEdges": "尚未定義物件屬性",
+      "implicit": "虛線 = 被屬性引用"
+    },
+    "review": {
+      "pending": "待審核",
+      "autoPassed": "自動通過",
+      "approve": "核准",
+      "reject": "拒絕",
+      "rejectReason": "拒絕理由",
+      "noPending": "目前無待審核項目"
+    }
+  },
+  "settings": {
+    "title": "設置",
+    "params": "系統參數",
+    "accounts": "賬號與角色",
+    "permissions": "權限管理",
+    "profile": "個人信息",
+    "mySettings": "我的設置",
+    "myAccount": "我的賬戶",
+    "theme": "主題",
+    "language": "語言"
+  },
+  "theme": {
+    "light": "淺色",
+    "dark": "深色",
+    "system": "跟隨系統"
+  },
+  "common": {
+    "loading": "載入中…",
+    "error": "錯誤",
+    "retry": "重試",
+    "cancel": "取消",
+    "confirm": "確認",
+    "save": "儲存",
+    "edit": "編輯",
+    "delete": "刪除",
+    "required": "必填",
+    "noData": "暫無資料"
+  },
+  "errors": {
+    "401": "請重新登錄",
+    "403": "權限不足",
+    "404": "頁面不存在",
+    "500": "伺服器錯誤，請稍後再試"
+  },
+  "welcome": {
+    "subtitleZh": "知識資產中心",
+    "subtitleEn": "Knowledge Assets Center",
+    "enter": "歡迎進入"
+  },
+  "project": {
+    "selectProject": "選擇專案",
+    "switchTitle": "切換文件專案",
+    "requiredTitle": "請先選擇文件專案",
+    "requiredContent": "請先在儀表板、側邊欄系統設置或頭像選單選擇文件專案",
+    "noProject": "請先選擇文件專案"
+  }
+}

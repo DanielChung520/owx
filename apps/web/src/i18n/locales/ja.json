@@ -1,0 +1,259 @@
+{
+  "app": {
+    "name": "KAC",
+    "tagline": "ナレッジアセットセンター"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "documents": "ドキュメント",
+    "graph": "グラフ",
+    "graphVector": "グラフベクトル",
+    "retrieve": "ベクトル検索",
+    "eval": "検索評価",
+    "knowledge": "ナレッジオントロジー",
+    "settings": "システム設定",
+    "account": "アカウント権限",
+    "sidebarExpand": "サイドバー展開",
+    "sidebarCollapse": "サイドバー収納",
+    "anchor": "ワークスペース",
+    "help": "ヘルプ"
+  },
+  "header": {
+    "search": "検索",
+    "notifications": "通知",
+    "help": "ヘルプ"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "email": "メール",
+    "password": "パスワード",
+    "submit": "送信",
+    "profile": "プロフィール",
+    "switchScope": "スコープ切替",
+    "loginHint": "任意のメールアドレスと8文字以上のパスワードでログイン（モック）",
+    "invalidCredentials": "メールアドレスまたはパスワードが違います",
+    "username": "ユーザー名"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "documents": "ドキュメント数",
+    "entities": "エンティティ",
+    "relations": "リレーション",
+    "recentFiles": "最近の編集ファイル",
+    "quickLinks": "クイックリンク",
+    "kpiProjects": "プロジェクト数",
+    "kpiFiles": "ファイル数",
+    "kpiNodes": "知識ノード数",
+    "kpiRelations": "関係数",
+    "projectsTitle": "プロジェクト",
+    "filesTitle": "プロジェクトファイル",
+    "lastOpened": "最終アクセス",
+    "version": "バージョン",
+    "editedAt": "最終編集",
+    "addProject": "プロジェクト追加",
+    "modalTitle": "新規プロジェクト",
+    "projectName": "プロジェクト名",
+    "shortName": "略称",
+    "description": "概要",
+    "projectType": "プロジェクトタイプ",
+    "selectType": "タイプを選択",
+    "createPcm": "PCM を作成"
+  },
+  "documents": {
+    "title": "ドキュメント一覧",
+    "upload": "アップロード",
+    "name": "名前",
+    "type": "タイプ",
+    "size": "サイズ",
+    "uploadedAt": "アップロード日時",
+    "actions": "操作",
+    "sort": "並び替え",
+    "sortUpdatedAt": "最近の更新",
+    "sortCreatedAt": "作成日",
+    "summary": "概要",
+    "tags": "タグ",
+    "tagsPlaceholder": "カンマ区切りのタグ",
+    "copyFilename": "ファイル名をコピー",
+    "share": "共有",
+    "export": "エクスポート",
+    "authorize": "権限付与",
+    "details": "詳細",
+    "deleteConfirmHint": "この操作は元に戻せません。削除するには大文字の DELETE と入力してください",
+    "shareView": "閲覧のみ",
+    "shareEdit": "編集可能",
+    "copyLink": "リンクをコピー",
+    "regenerate": "再生成",
+    "backToList": "一覧に戻る",
+    "preview": "プレビュー（最初の500文字）",
+    "content": "コンテンツ",
+    "createdAt": "作成日時",
+    "summaryUnavailable": "要約なし",
+    "outline": "目次",
+    "noOutline": "目次なし",
+    "pageLabel": "{{n}}ページ",
+    "fullscreen": "全画面"
+  },
+  "graph": {
+    "title": "グラフ可視化",
+    "placeholder": "グラフ可視化（プレースホルダ）"
+  },
+  "graphVector": {
+    "title": "グラフベクトル",
+    "subtitle": "グラフ + ベクトル統合ビュー",
+    "layout": "レイアウト",
+    "layouts": {
+      "list": "エンティティリスト",
+      "neighborhood": "近傍",
+      "path": "パス検索"
+    },
+    "pathQuery": "パス検索",
+    "neighborhood": "近傍",
+    "entities": "エンティティ",
+    "noEntities": "エンティティなし",
+    "stats": {
+      "entities": "エンティティ",
+      "relations": "リレーション",
+      "communities": "コミュニティ",
+      "chunks": "ベクトルチャンク"
+    },
+    "tabs": {
+      "graph": "グラフ",
+      "vector": "ベクトル"
+    },
+    "generate": "生成",
+    "regenerate": "再生成",
+    "generating": "生成中...",
+    "jobStatus": "ジョブステータス"
+  },
+  "retrieve": {
+    "title": "ベクトル検索",
+    "queryPlaceholder": "クエリ入力…",
+    "search": "検索",
+    "results": "結果",
+    "notAvailable": "ベクトル検索バックエンド未接続（Phase 1）"
+  },
+  "eval": {
+    "title": "検索評価",
+    "placeholder": "検索評価（プレースホルダ）"
+  },
+  "knowledge": {
+    "title": "ナレッジオントロジー",
+    "placeholder": "ナレッジ（プレースホルダ）",
+    "notAvailable": "ナレッジグラフは未接続",
+    "entityCount": "エンティティ",
+    "relationCount": "リレーション",
+    "entities": "エンティティ",
+    "relations": "リレーション",
+    "noEntities": "抽出されたエンティティなし",
+    "noRelations": "抽出されたリレーションなし",
+    "tabs": {
+      "generator": "生成",
+      "library": "ライブラリ",
+      "review": "レビュー"
+    },
+    "generator": {
+      "corpusSource": "コーパスソース",
+      "userNotes": "ユーザーノート（任意）",
+      "projectFiles": "プロジェクトファイル",
+      "knowledgeTypes": "知識タイプ",
+      "knowledgeTypesPlaceholder": "自由入力、Enter または , ， | 、 で区切り",
+      "fileTypes": "知識タイプ",
+      "fileTypesPlaceholder": "自由入力、Enter または , ， | 、 で区切り",
+      "tags": "タグ",
+      "tagsPlaceholder": "タグを入力または選択",
+      "useCases": "ユースケース",
+      "useCasesPlaceholder": "ユースケースを入力または選択",
+      "webResearch": "ウェブ深掘り調査",
+      "alignPreview": "外部標準アライメントプレビュー",
+      "alignHint": "AI が知識タイプを Schema.org + Wikidata に自動アライメントします（オンライン検証可）。生成後、各クラスに外部アンカーが表示されます",
+      "alignRecommendation": "知識タイプは 3〜6 個を推奨。各タイプはドメイン概念単位で（例：貿易文書、在庫バッチ）。細かすぎると NER 精度が低下します",
+      "alignWikidataPlaceholder": "Q-ID は生成時に自動検索されます",
+      "alignNoMatch": "対応する Schema.org 提案なし",
+      "startGenerate": "オントロジー生成開始",
+      "generating": "生成中..."
+    },
+    "library": {
+      "view": "表示",
+      "viewList": "リスト",
+      "viewGraph": "グラフ",
+      "diff": "差分",
+      "assign": "割り当て",
+      "approved": "承認済み",
+      "pending": "レビュー中",
+      "rejected": "却下",
+      "noOntologies": "オントロジーなし"
+    },
+    "external": {
+      "provenance": "出典",
+      "anchoredCount": "{{anchored}} 整備済み / {{total}} 件",
+      "wikidata": "Wikidata",
+      "schemaOrg": "Schema.org",
+      "skos": "SKOS"
+    },
+    "graph": {
+      "force": "フォース",
+      "tree": "ツリー",
+      "nodes": "ノード",
+      "edges": "エッジ",
+      "legend": "凡例",
+      "noData": "グラフデータなし",
+      "noEdges": "オブジェクトプロパティ未定義",
+      "implicit": "破線 = プロパティから参照"
+    },
+    "review": {
+      "pending": "レビュー待ち",
+      "autoPassed": "自動承認",
+      "approve": "承認",
+      "reject": "却下",
+      "rejectReason": "却下理由",
+      "noPending": "レビュー待ちなし"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "params": "システムパラメータ",
+    "accounts": "アカウントとロール",
+    "permissions": "権限管理",
+    "profile": "プロフィール",
+    "theme": "テーマ",
+    "language": "言語",
+    "mySettings": "マイ設定",
+    "myAccount": "マイアカウント"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "common": {
+    "loading": "読み込み中…",
+    "error": "エラー",
+    "retry": "再試行",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "save": "保存",
+    "edit": "編集",
+    "delete": "削除",
+    "required": "必須",
+    "noData": "データなし"
+  },
+  "errors": {
+    "401": "再ログインしてください",
+    "403": "権限がありません",
+    "404": "ページが見つかりません",
+    "500": "サーバーエラー、後でもう一度お試しください"
+  },
+  "welcome": {
+    "subtitleZh": "知識資產中心",
+    "subtitleEn": "Knowledge Assets Center",
+    "enter": "ようこそ"
+  },
+  "project": {
+    "selectProject": "プロジェクトを選択",
+    "switchTitle": "ファイルプロジェクトを切替",
+    "requiredTitle": "先にファイルプロジェクトを選択してください",
+    "requiredContent": "ダッシュボード、サイドバー設定、またはアバターメニューから先に選択してください",
+    "noProject": "先にファイルプロジェクトを選択してください"
+  }
+}

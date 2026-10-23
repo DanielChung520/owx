@@ -1,0 +1,270 @@
+{
+  "app": {
+    "name": "KAC",
+    "tagline": "Knowledge Assets Center"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "graph": "Graph",
+    "graphVector": "Graph Vector",
+    "retrieve": "Vector Search",
+    "eval": "Retrieval Eval",
+    "knowledge": "Knowledge Ontology",
+    "settings": "System Settings",
+    "account": "Account & Roles",
+    "sidebarExpand": "Expand sidebar",
+    "sidebarCollapse": "Collapse sidebar",
+    "anchor": "Workspace",
+    "help": "Help"
+  },
+  "header": {
+    "search": "Search",
+    "notifications": "Notifications",
+    "help": "Help"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "profile": "Profile",
+    "switchScope": "Switch scope",
+    "loginHint": "Enter any email + 8+ char password to log in (mock)",
+    "invalidCredentials": "Invalid email or password",
+    "username": "Username"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "documents": "Total Documents",
+    "entities": "Entities",
+    "relations": "Relations",
+    "recentFiles": "Recent Files",
+    "quickLinks": "Quick Links",
+    "kpiProjects": "Projects",
+    "kpiFiles": "Files",
+    "kpiNodes": "Knowledge Nodes",
+    "kpiRelations": "Relations",
+    "projectsTitle": "Projects",
+    "filesTitle": "Project Files",
+    "lastOpened": "Last opened",
+    "version": "Version",
+    "editedAt": "Edited",
+    "addProject": "Add Project",
+    "modalTitle": "New Project",
+    "projectName": "Project Name",
+    "shortName": "Short Name",
+    "description": "Description",
+    "projectType": "Project Type",
+    "selectType": "Select project type",
+    "createPcm": "Create PCM"
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Upload",
+    "name": "Name",
+    "type": "Type",
+    "size": "Size",
+    "uploadedAt": "Uploaded At",
+    "actions": "Actions",
+    "sort": "Sort by",
+    "sortUpdatedAt": "Recently modified",
+    "sortCreatedAt": "Created date",
+    "summary": "Summary",
+    "tags": "Tags",
+    "tagsPlaceholder": "Comma-separated tags",
+    "copyFilename": "Copy filename",
+    "share": "Share",
+    "export": "Export",
+    "authorize": "Authorize",
+    "details": "Details",
+    "deleteConfirmHint": "This action cannot be undone. Type DELETE in uppercase to confirm deletion.",
+    "shareView": "Can view",
+    "shareEdit": "Can edit",
+    "copyLink": "Copy link",
+    "regenerate": "Regenerate",
+    "backToList": "Back to list",
+    "preview": "Preview (first 500 chars)",
+    "createdAt": "Created at",
+    "summaryUnavailable": "Summary unavailable",
+    "attributes": "Properties",
+    "attributesFilename": "Filename",
+    "attributesType": "Type",
+    "attributesSize": "Size",
+    "attributesCreatedAt": "Created at",
+    "attributesUpdatedAt": "Updated at",
+    "attributesTags": "Tags",
+    "attributesSummary": "Summary",
+    "attributesPreview": "Preview",
+    "outline": "Outline",
+    "noOutline": "No outline",
+    "pageLabel": "Page {{n}}",
+    "fullscreen": "Fullscreen",
+    "regenerateOutline": "Regenerate outline (VLM)",
+    "regenerateOutlineTip": "Use VLM to recognize titles per page, replacing PDF bookmark outline",
+    "vlmOutlineLoading": "VLM is generating outline…",
+    "vlmOutlineFailed": "VLM outline generation failed"
+  },
+  "graph": {
+    "title": "Graph Visualization",
+    "placeholder": "Graph viz (placeholder)"
+  },
+  "graphVector": {
+    "title": "Graph Vector",
+    "subtitle": "Unified GraphRAG + Vector view",
+    "layout": "Layout",
+    "layouts": {
+      "list": "Entity list",
+      "neighborhood": "Neighborhood",
+      "path": "Path query"
+    },
+    "pathQuery": "Path Query",
+    "neighborhood": "Neighborhood",
+    "entities": "Entities",
+    "noEntities": "No entities",
+    "stats": {
+      "entities": "Entities",
+      "relations": "Relations",
+      "communities": "Communities",
+      "chunks": "Vector chunks"
+    },
+    "tabs": {
+      "graph": "Graph",
+      "vector": "Vector"
+    },
+    "generate": "Generate",
+    "regenerate": "Regenerate",
+    "generating": "Generating...",
+    "jobStatus": "Job status"
+  },
+  "retrieve": {
+    "title": "Vector Search",
+    "queryPlaceholder": "Enter query…",
+    "search": "Search",
+    "results": "Results",
+    "notAvailable": "Vector search backend not connected (Phase 1)"
+  },
+  "eval": {
+    "title": "Retrieval Eval",
+    "placeholder": "Retrieval eval (placeholder)"
+  },
+  "knowledge": {
+    "title": "Knowledge Ontology",
+    "placeholder": "Knowledge base (placeholder)",
+    "notAvailable": "Knowledge graph backend not connected (Phase 1)",
+    "entityCount": "Entities",
+    "relationCount": "Relations",
+    "entities": "Entities",
+    "relations": "Relations",
+    "noEntities": "No entities extracted yet",
+    "noRelations": "No relations extracted yet",
+    "tabs": {
+      "generator": "Generator",
+      "library": "Library",
+      "review": "Review"
+    },
+    "generator": {
+      "corpusSource": "Corpus Source",
+      "userNotes": "User Notes (optional)",
+      "projectFiles": "Project files",
+      "knowledgeTypes": "Knowledge Types",
+      "knowledgeTypesPlaceholder": "Free input, Enter or , ， | 、 to separate (e.g. system docs, spec, trade, finance)",
+      "fileTypes": "Knowledge Types",
+      "fileTypesPlaceholder": "Free input, Enter or , ， | 、 to separate",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter or select tags",
+      "useCases": "Use Cases",
+      "useCasesPlaceholder": "Enter or select use cases",
+      "webResearch": "Web Research",
+      "alignPreview": "External Standard Alignment Preview",
+      "alignHint": "AI will auto-align knowledge types to Schema.org + Wikidata (may verify online); each class shows external anchors after generation",
+      "alignRecommendation": "Recommend 3-6 knowledge types, each as a domain concept (e.g. trade documents, inventory batches); overly fine-grained types reduce NER accuracy",
+      "alignWikidataPlaceholder": "Q-ID auto-resolved at generation",
+      "alignNoMatch": "No Schema.org suggestion",
+      "startGenerate": "Start generating ontology",
+      "generating": "Generating..."
+    },
+    "library": {
+      "view": "View",
+      "viewList": "List",
+      "viewGraph": "Graph",
+      "diff": "Diff",
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected",
+      "noOntologies": "No ontologies yet"
+    },
+    "external": {
+      "provenance": "Provenance",
+      "anchoredCount": "{{anchored}} aligned / {{total}} total",
+      "wikidata": "Wikidata",
+      "schemaOrg": "Schema.org",
+      "skos": "SKOS"
+    },
+    "graph": {
+      "force": "Force",
+      "tree": "Tree",
+      "nodes": "nodes",
+      "edges": "edges",
+      "legend": "Legend",
+      "noData": "No graph data",
+      "noEdges": "No object properties defined",
+      "implicit": "dashed = referenced by property"
+    },
+    "review": {
+      "pending": "Pending review",
+      "autoPassed": "Auto-passed",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectReason": "Reject reason",
+      "noPending": "No pending reviews"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "params": "System Params",
+    "accounts": "Accounts & Roles",
+    "permissions": "Permissions",
+    "profile": "Profile",
+    "theme": "Theme",
+    "language": "Language",
+    "mySettings": "My Settings",
+    "myAccount": "My Account"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Error",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "required": "Required",
+    "noData": "No data"
+  },
+  "errors": {
+    "401": "Please log in again",
+    "403": "Permission denied",
+    "404": "Page not found",
+    "500": "Server error, please try again later"
+  },
+  "welcome": {
+    "subtitleZh": "知識資產中心",
+    "subtitleEn": "Knowledge Assets Center",
+    "enter": "Enter"
+  },
+  "project": {
+    "selectProject": "Select project",
+    "switchTitle": "Switch file project",
+    "requiredTitle": "Please select a file project first",
+    "requiredContent": "Please select a file project from Dashboard, sidebar settings, or avatar menu first",
+    "noProject": "Please select a file project first"
+  }
+}

@@ -1,5 +1,8 @@
 export type SidePanel = "explorer" | "outline" | "graph";
 
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/auth";
+
 function ExplorerIcon(): JSX.Element {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -106,6 +109,17 @@ export function ActivityBar({
   onTheme: () => void;
   onSettingsMenu: (anchor: { right: number; bottom: number }) => void;
 }): JSX.Element {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+
+  const handleLogoClick = () => {
+    if (user) {
+      navigate("/welcome");
+    } else {
+      navigate("/auth/login");
+    }
+  };
+
   return (
     <nav className="activitybar" aria-label="活動列">
       <div className="activitybar-top">
@@ -114,6 +128,7 @@ export function ActivityBar({
           className="activity activity-logo"
           aria-label="owx"
           title="owx"
+          onClick={handleLogoClick}
         >
           <img src="/owx-logo.png" alt="owx logo" />
         </button>

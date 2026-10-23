@@ -1,0 +1,259 @@
+{
+  "app": {
+    "name": "KAC",
+    "tagline": "知识资产中心"
+  },
+  "nav": {
+    "dashboard": "仪表板",
+    "documents": "文件",
+    "graph": "图谱",
+    "graphVector": "图谱向量",
+    "retrieve": "向量查询",
+    "eval": "检索验证",
+    "knowledge": "知识本体",
+    "settings": "系统设置",
+    "account": "账号权限",
+    "sidebarExpand": "展开侧边栏",
+    "sidebarCollapse": "收起侧边栏",
+    "anchor": "锚定工作区",
+    "help": "帮助"
+  },
+  "header": {
+    "search": "搜索",
+    "notifications": "通知",
+    "help": "说明"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "登出",
+    "email": "电子邮件",
+    "password": "密码",
+    "submit": "提交",
+    "profile": "个人资料",
+    "switchScope": "切换工作区",
+    "loginHint": "输入任何 email + 8 位以上密码即可登录（mock）",
+    "invalidCredentials": "账号或密码错误",
+    "username": "账号"
+  },
+  "dashboard": {
+    "title": "仪表板",
+    "documents": "文件总数",
+    "entities": "实体数",
+    "relations": "关系数",
+    "recentFiles": "最近编辑文件",
+    "quickLinks": "快速链接",
+    "kpiProjects": "总项目数",
+    "kpiFiles": "总文件数",
+    "kpiNodes": "总知识节点",
+    "kpiRelations": "关系数",
+    "projectsTitle": "项目",
+    "filesTitle": "项目文件",
+    "lastOpened": "最近开启",
+    "version": "版本",
+    "editedAt": "最近编辑",
+    "addProject": "增加项目",
+    "modalTitle": "新增项目",
+    "projectName": "项目名称",
+    "shortName": "简称",
+    "description": "概述",
+    "projectType": "项目类型",
+    "selectType": "请选择项目类型",
+    "createPcm": "是否创建 PCM"
+  },
+  "documents": {
+    "title": "文件清单",
+    "upload": "上传文件",
+    "name": "名称",
+    "type": "类型",
+    "size": "大小",
+    "uploadedAt": "上传时间",
+    "actions": "操作",
+    "sort": "排序方式",
+    "sortUpdatedAt": "最近修改",
+    "sortCreatedAt": "创建日期",
+    "summary": "摘要",
+    "tags": "标签",
+    "tagsPlaceholder": "以逗号分隔多个标签",
+    "copyFilename": "复制文件名",
+    "share": "分享",
+    "export": "导出",
+    "authorize": "授权",
+    "details": "详情",
+    "deleteConfirmHint": "此操作无法复原，请输入大写 DELETE 以确认删除",
+    "shareView": "只能查询",
+    "shareEdit": "可以编辑",
+    "copyLink": "复制链接",
+    "regenerate": "重新产生",
+    "backToList": "返回文件清单",
+    "preview": "预览（前 500 字）",
+    "content": "内容",
+    "createdAt": "创建时间",
+    "summaryUnavailable": "摘要不可用",
+    "outline": "大纲",
+    "noOutline": "无大纲",
+    "pageLabel": "第{{n}}页",
+    "fullscreen": "全屏"
+  },
+  "graph": {
+    "title": "图谱可视化",
+    "placeholder": "图谱可视化（占位）"
+  },
+  "graphVector": {
+    "title": "图谱向量",
+    "subtitle": "图谱 + 向量统一视图",
+    "layout": "布局",
+    "layouts": {
+      "list": "实体列表",
+      "neighborhood": "邻域",
+      "path": "路径查询"
+    },
+    "pathQuery": "路径查询",
+    "neighborhood": "邻域",
+    "entities": "实体",
+    "noEntities": "暂无实体",
+    "stats": {
+      "entities": "实体",
+      "relations": "关系",
+      "communities": "社群",
+      "chunks": "向量区块"
+    },
+    "tabs": {
+      "graph": "图谱",
+      "vector": "向量"
+    },
+    "generate": "生成",
+    "regenerate": "重新生成",
+    "generating": "生成中...",
+    "jobStatus": "任务状态"
+  },
+  "retrieve": {
+    "title": "向量查询",
+    "queryPlaceholder": "输入查询…",
+    "search": "搜索",
+    "results": "结果",
+    "notAvailable": "向量检索后端未接入（Phase 1）"
+  },
+  "eval": {
+    "title": "检索验证",
+    "placeholder": "检索验证（占位）"
+  },
+  "knowledge": {
+    "title": "知识本体",
+    "placeholder": "知识库（占位）",
+    "notAvailable": "知识图谱后端未接入（Phase 1）",
+    "entityCount": "实体",
+    "relationCount": "关系",
+    "entities": "实体",
+    "relations": "关系",
+    "noEntities": "尚未抽取实体",
+    "noRelations": "尚未抽取关系",
+    "tabs": {
+      "generator": "生成",
+      "library": "库存",
+      "review": "审核"
+    },
+    "generator": {
+      "corpusSource": "Corpus 来源",
+      "userNotes": "使用者 notes（选填）",
+      "projectFiles": "Project 文件",
+      "knowledgeTypes": "知识类型",
+      "knowledgeTypesPlaceholder": "自由输入知识类型，Enter 或 , ， | 、 分隔（例：系统文件、系统规格书、贸易文件）",
+      "fileTypes": "知识类型",
+      "fileTypesPlaceholder": "自由输入知识类型，Enter 或 , ， | 、 分隔",
+      "tags": "标签",
+      "tagsPlaceholder": "输入或选择标签",
+      "useCases": "应用场景",
+      "useCasesPlaceholder": "输入或选择应用场景",
+      "webResearch": "上网深研",
+      "alignPreview": "外部标准对齐预览",
+      "alignHint": "AI 将依知识类型自动对齐 Schema.org + Wikidata，可上网检索验证，生成后每类可见外部锚",
+      "alignRecommendation": "建议知识类型 3-6 个，每个以领域概念为单位（例：贸易文件、库存批次），过细会降低 NER 准确度",
+      "alignWikidataPlaceholder": "Q-ID 将于生成时自动检索",
+      "alignNoMatch": "无对应 Schema.org 建议",
+      "startGenerate": "开始生成 ontology",
+      "generating": "生成中..."
+    },
+    "library": {
+      "view": "检视",
+      "viewList": "列表",
+      "viewGraph": "图谱",
+      "diff": "差异",
+      "assign": "指派",
+      "approved": "已核准",
+      "pending": "审核中",
+      "rejected": "已拒绝",
+      "noOntologies": "尚无 ontology"
+    },
+    "external": {
+      "provenance": "来源",
+      "anchoredCount": "{{anchored}} 已对齐 / {{total}} 总数",
+      "wikidata": "Wikidata",
+      "schemaOrg": "Schema.org",
+      "skos": "SKOS"
+    },
+    "graph": {
+      "force": "力导向",
+      "tree": "树状",
+      "nodes": "节点",
+      "edges": "边",
+      "legend": "图例",
+      "noData": "无图谱数据",
+      "noEdges": "尚未定义对象属性",
+      "implicit": "虚线 = 被属性引用"
+    },
+    "review": {
+      "pending": "待审核",
+      "autoPassed": "自动通过",
+      "approve": "核准",
+      "reject": "拒绝",
+      "rejectReason": "拒绝理由",
+      "noPending": "目前无待审核项目"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "params": "系统参数",
+    "accounts": "账号与角色",
+    "permissions": "权限管理",
+    "profile": "个人信息",
+    "theme": "主题",
+    "language": "语言",
+    "mySettings": "我的设置",
+    "myAccount": "我的账户"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "common": {
+    "loading": "加载中…",
+    "error": "错误",
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "edit": "编辑",
+    "delete": "删除",
+    "required": "必填",
+    "noData": "暂无资料"
+  },
+  "errors": {
+    "401": "请重新登录",
+    "403": "权限不足",
+    "404": "页面不存在",
+    "500": "服务器错误，请稍后再试"
+  },
+  "welcome": {
+    "subtitleZh": "知識資產中心",
+    "subtitleEn": "Knowledge Assets Center",
+    "enter": "欢迎进入"
+  },
+  "project": {
+    "selectProject": "选择项目",
+    "switchTitle": "切换文件项目",
+    "requiredTitle": "请先选择文件项目",
+    "requiredContent": "请先在仪表板、侧边栏系统设置或头像菜单选择文件项目",
+    "noProject": "请先选择文件项目"
+  }
+}

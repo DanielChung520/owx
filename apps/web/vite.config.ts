@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
 
 const FRONTEND_PORT = Number(process.env.OWX_WEB_PORT ?? "13100");
 const OPENCODE_URL = process.env.OWX_OPENCODE_URL ?? "http://127.0.0.1:13001";
@@ -7,6 +8,11 @@ const HARNESS_URL = process.env.OWX_HARNESS_URL ?? "http://127.0.0.1:13110";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   server: {
     port: FRONTEND_PORT,
     allowedHosts: ["owx.aiconn.ai", "localhost", "127.0.0.1"],
