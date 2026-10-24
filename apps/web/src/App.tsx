@@ -68,6 +68,7 @@ import {
   setSessionModel,
   toChatMessages,
   type CreatedProject,
+  type ClipboardEntry,
   type FileEntry,
   type KnowledgeProject,
   type NewProjectInput,
@@ -148,6 +149,7 @@ export function App(): JSX.Element {
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [nodeMenu, setNodeMenu] = useState<{ entry: FileEntry; x: number; y: number } | null>(null);
+  const [clipboard, setClipboard] = useState<ClipboardEntry | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [projectShowHidden, setProjectShowHidden] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -476,6 +478,36 @@ export function App(): JSX.Element {
 
   const getName = (entry: FileEntry): string => baseName(entry.path);
 
+  const copyNode = (entry: FileEntry): void => {
+    setClipboard({ mode: "copy", path: entryPath(entry), name: getName(entry) });
+    setNotice(`已複製「${getName(entry)}」，可貼上到資料夾`);
+  };
+
+  const cutNode = (entry: FileEntry): void => {
+    setClipboard({ mode: "cut", path: entryPath(entry), name: getName(entry) });
+    setNotice(`已剪下「${getName(entry)}」，可貼上到資料夾`);
+  };
+
+  const pasteInto = (dirPath: string, item: ClipboardEntry): void => {
+    const dest = dirPath === "" ? item.name : joinPath(dirPath, item.name);
+    void (async () => {
+      try {
+        const result =
+          item.mode === "cut"
+            ? await fsMove(projectRoot, item.path, dest, "unique")
+            : await fsCopy(projectRoot, item.path, dest, "unique");
+        if (item.mode === "cut") {
+          closeDocsUnder(item.path);
+          setClipboard(null);
+        }
+        refreshTree();
+        setNotice(`已貼上：${result.path}`);
+      } catch (cause) {
+        noticeOrError(cause);
+      }
+    })();
+  };
+
   const renameNode = (entry: FileEntry): void => {
     const path = entryPath(entry);
     const current = getName(entry);
@@ -642,6 +674,16 @@ export function App(): JSX.Element {
       { label: "刪除", onSelect: () => deleteNode(entry) },
       { label: "檔案資訊", onSelect: () => showInfo(entry) },
     ];
+    const clipboardItems: NodeMenuItem[] = [
+      { label: "複製", onSelect: () => copyNode(entry) },
+      { label: "剪下", onSelect: () => cutNode(entry) },
+    ];
+    if (entry.type === "directory" && clipboard !== null) {
+      clipboardItems.push({
+        label: `貼上「${clipboard.name}」`,
+        onSelect: () => pasteInto(entryPath(entry), clipboard),
+      });
+    }
     const pack: NodeMenuItem[] = [{ label: "打包", onSelect: () => packageNode(entry) }];
     if (entry.type === "file" && isArchive(entry.path)) {
       pack.push({ label: "解封裝", onSelect: () => unpackNode(entry) });
@@ -658,7 +700,9 @@ export function App(): JSX.Element {
       { label: "複製相對路徑", onSelect: () => copyPath(entry, false) },
       { label: "複製絕對路徑", onSelect: () => copyPath(entry, true) },
     ];
-    return [create, io, edit, pack, paths].filter((group) => group.length > 0);
+    return [create, io, edit, clipboardItems, pack, paths].filter(
+      (group) => group.length > 0,
+    );
   };
 
   const checkVersion = (): void => {

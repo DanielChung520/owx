@@ -319,6 +319,12 @@ export interface FileEntry {
   ignored?: boolean;
 }
 
+export interface ClipboardEntry {
+  mode: "copy" | "cut";
+  path: string;
+  name: string;
+}
+
 export interface ProjectSummary {
   id: string;
   worktree: string;
@@ -496,16 +502,18 @@ export async function fsCopy(
   directory: string,
   path: string,
   dest: string,
+  resolve?: "unique",
 ): Promise<{ path: string }> {
-  return harnessPost<{ path: string }>("/rpc/fs/copy", { directory, path, dest });
+  return harnessPost<{ path: string }>("/rpc/fs/copy", { directory, path, dest, resolve });
 }
 
 export async function fsMove(
   directory: string,
   path: string,
   dest: string,
+  resolve?: "unique",
 ): Promise<{ path: string }> {
-  return harnessPost<{ path: string }>("/rpc/fs/move", { directory, path, dest });
+  return harnessPost<{ path: string }>("/rpc/fs/move", { directory, path, dest, resolve });
 }
 
 export async function fsDelete(

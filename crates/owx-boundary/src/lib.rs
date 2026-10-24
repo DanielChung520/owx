@@ -828,6 +828,65 @@ struct TransferBody {
     directory: String,
     path: String,
     dest: String,
+    #[serde(default)]
+    resolve: Option<String>,
+}
+
+fn unique_dest(parent: &Path, name: &str) -> PathBuf {
+    if !parent.join(name).exists() {
+        return parent.join(name);
+    }
+    let path = Path::new(name);
+    let stem = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or(name);
+    let extension = path.extension().and_then(|value| value.to_str());
+    for index in 1..1000 {
+        let file = match extension {
+            Some(ext) => format!("{stem} ({index}).{ext}"),
+            None => format!("{stem} ({index})"),
+        };
+        if !parent.join(&file).exists() {
+            return parent.join(file);
+        }
+    }
+    parent.join(format!("{stem}-copy"))
+}
+
+/// 依 `resolve` 策略解析最終目標路徑（`unique` 時自動避讓；否則衝突即錯誤）。
+fn resolve_dest(
+    root: &Path,
+    dest_rel: &str,
+    resolve: Option<&str>,
+) -> Result<(PathBuf, String), (StatusCode, Json<serde_json::Value>)> {
+    let dest = safe_join(root, dest_rel).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !dest.exists() {
+        return Ok((dest, dest_rel.to_string()));
+    }
+    if resolve != Some("unique") {
+        return Err(fail(StatusCode::CONFLICT, "already_exists"));
+    }
+    let parent = dest
+        .parent()
+        .ok_or_else(|| fail(StatusCode::BAD_REQUEST, "invalid_path"))?
+        .to_path_buf();
+    let name = dest
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("item")
+        .to_string();
+    let unique = unique_dest(&parent, &name);
+    let unique_name = unique
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("item")
+        .to_string();
+    let relative = match dest_rel.rsplit_once('/') {
+        Some((prefix, _)) => format!("{prefix}/{unique_name}"),
+        None => unique_name,
+    };
+    Ok((unique, relative))
 }
 
 /// `POST /rpc/fs/copy`：複製副本（`dest` 為完整相對路徑；不覆蓋既有）。
@@ -836,18 +895,15 @@ async fn rpc_fs_copy(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let root = Path::new(&body.directory);
     let src = safe_join(root, &body.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
-    let dest = safe_join(root, &body.dest).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
     if !src.exists() {
         return Err(fail(StatusCode::NOT_FOUND, "not_found"));
     }
-    if dest.exists() {
-        return Err(fail(StatusCode::CONFLICT, "already_exists"));
-    }
+    let (dest, relative) = resolve_dest(root, &body.dest, body.resolve.as_deref())?;
     if inside_subtree(&src, &dest) {
         return Err(fail(StatusCode::BAD_REQUEST, "invalid_target"));
     }
     copy_tree(&src, &dest).map_err(|code| fail(StatusCode::INTERNAL_SERVER_ERROR, code))?;
-    Ok(Json(json!({ "path": body.dest })))
+    Ok(Json(json!({ "path": relative })))
 }
 
 /// `POST /rpc/fs/move`：移動／改名至其他路徑（不覆蓋既有）。
@@ -856,18 +912,15 @@ async fn rpc_fs_move(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let root = Path::new(&body.directory);
     let src = safe_join(root, &body.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
-    let dest = safe_join(root, &body.dest).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
     if !src.exists() {
         return Err(fail(StatusCode::NOT_FOUND, "not_found"));
     }
-    if dest.exists() {
-        return Err(fail(StatusCode::CONFLICT, "already_exists"));
-    }
+    let (dest, relative) = resolve_dest(root, &body.dest, body.resolve.as_deref())?;
     if inside_subtree(&src, &dest) {
         return Err(fail(StatusCode::BAD_REQUEST, "invalid_target"));
     }
     move_path(&src, &dest).map_err(|code| fail(StatusCode::INTERNAL_SERVER_ERROR, code))?;
-    Ok(Json(json!({ "path": body.dest })))
+    Ok(Json(json!({ "path": relative })))
 }
 
 #[derive(serde::Deserialize)]
@@ -1680,6 +1733,7 @@ mod node_ops_tests {
             directory: directory.clone(),
             path: "src".into(),
             dest: "copy".into(),
+            resolve: None,
         }))
         .await
         .expect("copy");
@@ -1693,6 +1747,7 @@ mod node_ops_tests {
             directory: directory.clone(),
             path: "src".into(),
             dest: "src/inside".into(),
+            resolve: None,
         }))
         .await
         .unwrap_err();
@@ -1702,6 +1757,7 @@ mod node_ops_tests {
             directory: directory.clone(),
             path: "copy".into(),
             dest: "renamed".into(),
+            resolve: None,
         }))
         .await
         .expect("move");
@@ -1713,10 +1769,53 @@ mod node_ops_tests {
             directory,
             path: "renamed".into(),
             dest: "src".into(),
+            resolve: None,
         }))
         .await
         .unwrap_err();
         assert_eq!(occupied.0, StatusCode::CONFLICT);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn transfer_resolve_unique_avoids_overwrite() {
+        let root = tmp("resolve");
+        let directory = root.to_string_lossy().to_string();
+        std::fs::create_dir_all(root.join("a")).unwrap();
+        std::fs::write(root.join("a/note.md"), b"one").unwrap();
+        std::fs::write(root.join("note.md"), b"existing").unwrap();
+
+        let copied = rpc_fs_copy(Json(TransferBody {
+            directory: directory.clone(),
+            path: "a/note.md".into(),
+            dest: "note.md".into(),
+            resolve: Some("unique".into()),
+        }))
+        .await
+        .expect("copy unique");
+        assert_eq!(copied.0["path"], json!("note (1).md"));
+        assert_eq!(std::fs::read(root.join("note.md")).unwrap(), b"existing");
+        assert_eq!(std::fs::read(root.join("note (1).md")).unwrap(), b"one");
+
+        let moved = rpc_fs_move(Json(TransferBody {
+            directory: directory.clone(),
+            path: "a/note.md".into(),
+            dest: "note.md".into(),
+            resolve: Some("unique".into()),
+        }))
+        .await
+        .expect("move unique");
+        assert_eq!(moved.0["path"], json!("note (2).md"));
+
+        let strict = rpc_fs_copy(Json(TransferBody {
+            directory,
+            path: "note.md".into(),
+            dest: "note (1).md".into(),
+            resolve: None,
+        }))
+        .await
+        .unwrap_err();
+        assert_eq!(strict.0, StatusCode::CONFLICT);
         let _ = std::fs::remove_dir_all(&root);
     }
 
