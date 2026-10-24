@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   baseName,
   isArchive,
+  isAudio,
+  isHtml,
+  isImage,
   isMarkdown,
+  isOffice,
+  isPdf,
   isText,
+  isVideo,
   joinPath,
   nodePath,
   parentPath,
@@ -24,10 +30,20 @@ describe("file helpers", () => {
     expect(isArchive("a.md")).toBe(false);
   });
 
-  it("detects text-ish files", () => {
-    expect(isText("a.csv")).toBe(true);
-    expect(isText("a.rs")).toBe(true);
-    expect(isText("a.png")).toBe(false);
+  it("detects html", () => {
+    expect(isHtml("a.html")).toBe(true);
+    expect(isHtml("a.htm")).toBe(true);
+    expect(isHtml("a.md")).toBe(false);
+    expect(isHtml("README.HTML")).toBe(true);
+  });
+
+  it("detects media", () => {
+    expect(isImage("a.png")).toBe(true);
+    expect(isPdf("a.pdf")).toBe(true);
+    expect(isAudio("a.mp3")).toBe(true);
+    expect(isVideo("a.mp4")).toBe(true);
+    expect(isOffice("a.docx")).toBe(true);
+    expect(isOffice("a.xlsx")).toBe(true);
   });
 
   it("computes base name", () => {

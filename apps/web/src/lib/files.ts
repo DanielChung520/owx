@@ -8,7 +8,7 @@ export function isArchive(path: string): boolean {
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|ico|svg)$/i;
 const PDF_EXT = /\.pdf$/i;
-const HTML_EXT = /\.(html?|)/i;
+const HTML_EXT = /\.html?$/i;
 const AUDIO_EXT = /\.(mp3|wav|ogg|m4a)$/i;
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 const OFFICE_EXT = /\.(docx|xlsx|xlsm|pptx)$/i;

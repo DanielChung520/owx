@@ -4,6 +4,15 @@ import { filterHidden } from "../lib/hidden";
 import { FileIcon } from "./FileIcon";
 import { ProjectMenu } from "./ProjectMenu";
 
+function sortEntries(entries: FileEntry[]): FileEntry[] {
+  return [...entries].sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === "directory" ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name, "zh-Hant", { numeric: true });
+  });
+}
+
 function projectLabel(worktree: string): string {
   const parts = worktree.split("/").filter((part) => part !== "");
   return parts[parts.length - 1] ?? worktree;
@@ -12,6 +21,7 @@ function projectLabel(worktree: string): string {
 function TreeNode({
   entry,
   root,
+  reloadKey,
   showHidden,
   gitFiles,
   onSelect,
@@ -19,6 +29,7 @@ function TreeNode({
 }: {
   entry: FileEntry;
   root: string;
+  reloadKey: number;
   showHidden: boolean;
   gitFiles: Record<string, string>;
   onSelect: (entry: FileEntry) => void;
@@ -35,7 +46,9 @@ function TreeNode({
     let cancelled = false;
     void (async () => {
       try {
-        const list = filterHidden(await listDirectory(entry.path, root), showHidden);
+        const list = sortEntries(
+          filterHidden(await listDirectory(entry.path, root), showHidden),
+        );
         if (!cancelled) {
           setChildren(list);
           setError(false);
@@ -49,7 +62,7 @@ function TreeNode({
     return () => {
       cancelled = true;
     };
-  }, [open, showHidden, entry.path, root]);
+  }, [open, reloadKey, showHidden, entry.path, root]);
 
   const toggle = (): void => {
     if (entry.type !== "directory") {
@@ -90,6 +103,7 @@ function TreeNode({
               key={child.path}
               entry={child}
               root={root}
+              reloadKey={reloadKey}
               showHidden={showHidden}
               gitFiles={gitFiles}
               onSelect={onSelect}
@@ -173,6 +187,7 @@ export function FileExplorer({
             key={entry.path}
             entry={entry}
             root={root}
+            reloadKey={reloadKey}
             showHidden={showHidden}
             gitFiles={gitFiles}
             onSelect={onSelect}

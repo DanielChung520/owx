@@ -15,10 +15,6 @@ import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import { useEffect, useState } from "react";
 
-function rawUrl(path: string): string {
-  return `/rpc/fs/raw?path=${encodeURIComponent(path)}`;
-}
-
 function DocxPreview({ src }: { src: string }): JSX.Element {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
