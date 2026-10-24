@@ -1,4 +1,6 @@
 import type { OutlineItem } from "../lib/outline";
+import { parseOutline } from "../lib/outline";
+import { MarkdownView } from "./MarkdownView";
 
 export function DocumentOutline({
   items,
@@ -20,5 +22,34 @@ export function DocumentOutline({
         </li>
       ))}
     </ul>
+  );
+}
+
+function scrollToHeading(id: string): void {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+export function MarkdownDocView({
+  content,
+  showOutline,
+}: {
+  content: string;
+  showOutline: boolean;
+}): JSX.Element {
+  const outline = parseOutline(content);
+  return (
+    <div className="doc-body">
+      {showOutline ? (
+        <aside className="doc-outline" aria-label="文件大綱">
+          <div className="panel-header">
+            <span className="panel-title">大綱</span>
+          </div>
+          <DocumentOutline items={outline} onSelect={scrollToHeading} />
+        </aside>
+      ) : null}
+      <div className="doc-preview" id="doc-scroll">
+        <MarkdownView content={content} />
+      </div>
+    </div>
   );
 }

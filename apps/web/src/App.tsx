@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { ActivityBar, type SidePanel } from "./components/ActivityBar";
-import { DocumentOutline } from "./components/DocumentOutline";
 import { DocumentPreview } from "./components/DocumentPreview";
 import { FileExplorer } from "./components/FileExplorer";
 import { DocEditor } from "./components/DocEditor";
@@ -80,7 +79,6 @@ import { runBuiltinCommand, type CommandDialogPayload } from "./lib/command-acti
 import type { PaletteCommand } from "./lib/commands";
 import { chatReducer, initialChatState } from "./lib/chat";
 import { baseName, isArchive, isMarkdown, joinPath, nodePath } from "./lib/files";
-import { parseOutline } from "./lib/outline";
 import { useSessionStream } from "./lib/useSessionStream";
 
 const DEFAULT_PROJECT = import.meta.env.VITE_OWX_PROJECT_DIR ?? "";
@@ -137,6 +135,7 @@ export function App(): JSX.Element {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [docCollapsed, setDocCollapsed] = useState(false);
   const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(SIDE_DEFAULT);
   const [chatWidth, setChatWidth] = useState(CHAT_DEFAULT);
   const [projects, setProjects] = useState<KnowledgeProject[]>([]);
@@ -315,10 +314,6 @@ export function App(): JSX.Element {
   }, [notice]);
 
   const activeDoc = openDocs.find((item) => item.path === activeDocPath) ?? null;
-  const outline = useMemo(
-    () => (activeDoc === null ? [] : parseOutline(activeDoc.content)),
-    [activeDoc],
-  );
 
   const openFile = (entry: FileEntry): void => {
     setEditing(false);
@@ -359,9 +354,7 @@ export function App(): JSX.Element {
     setActiveDocPath(null);
   };
 
-  const scrollToHeading = (id: string): void => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+
 
   const openProject = (worktree: string): void => {
     setProjectRoot(worktree);
@@ -1038,36 +1031,29 @@ export function App(): JSX.Element {
       {!leftCollapsed ? (
         <aside className="side-panel" style={{ width: leftWidth }} aria-label="側欄">
           {activeView === "explorer" ? (
-          <FileExplorer
-            root={projectRoot}
-            projectName={
-              projects.find((project) => project.worktree === projectRoot)?.name ?? ""
-            }
-            reloadKey={reloadKey}
-            showHidden={projectShowHidden}
-            gitFiles={gitFiles}
-            onSelect={openFile}
-            onNodeContext={(entry, x, y) => setNodeMenu({ entry, x, y })}
-            onOpenProject={() => setHomeMode(true)}
-            onNewProject={() => setShowNewProject(true)}
-            onCloseProject={closeProject}
-            onPropertySettings={() => setShowProjectSettings(true)}
-          />
-        ) : activeView === "outline" ? (
-          <div className="outline-panel">
-            <div className="panel-header">
-              <span className="panel-title">大綱</span>
+            <FileExplorer
+              root={projectRoot}
+              projectName={
+                projects.find((project) => project.worktree === projectRoot)?.name ?? ""
+              }
+              reloadKey={reloadKey}
+              showHidden={projectShowHidden}
+              gitFiles={gitFiles}
+              onSelect={openFile}
+              onNodeContext={(entry, x, y) => setNodeMenu({ entry, x, y })}
+              onOpenProject={() => setHomeMode(true)}
+              onNewProject={() => setShowNewProject(true)}
+              onCloseProject={closeProject}
+              onPropertySettings={() => setShowProjectSettings(true)}
+            />
+          ) : (
+            <div className="placeholder-panel">
+              <div className="panel-header">
+                <span className="panel-title">知識圖譜</span>
+              </div>
+              <p className="panel-empty">Knowledge Graph 尚未實作（佔位）。</p>
             </div>
-            <DocumentOutline items={outline} onSelect={scrollToHeading} />
-          </div>
-        ) : (
-          <div className="placeholder-panel">
-            <div className="panel-header">
-              <span className="panel-title">知識圖譜</span>
-            </div>
-            <p className="panel-empty">Knowledge Graph 尚未實作（佔位）。</p>
-          </div>
-        )}
+          )}
         </aside>
       ) : null}
       {!leftCollapsed && !docCollapsed ? (
@@ -1129,6 +1115,16 @@ export function App(): JSX.Element {
               ) : null}
               <button
                 type="button"
+                className={`icon-btn${outlineOpen ? " active" : ""}`}
+                aria-pressed={outlineOpen}
+                aria-label="大綱"
+                title="大綱"
+                onClick={() => setOutlineOpen((open) => !open)}
+              >
+                大綱
+              </button>
+              <button
+                type="button"
                 className="icon-btn"
                 aria-haspopup="menu"
                 aria-label="文件選單"
@@ -1169,6 +1165,7 @@ export function App(): JSX.Element {
               path={activeDoc?.path ?? null}
               content={activeDoc?.content ?? null}
               directory={projectRoot}
+              outlineOpen={outlineOpen}
             />
           )}
         </section>

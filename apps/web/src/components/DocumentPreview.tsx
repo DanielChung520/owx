@@ -9,7 +9,7 @@ import {
   isText,
   isVideo,
 } from "../lib/files";
-import { MarkdownView } from "./MarkdownView";
+import { MarkdownDocView } from "./DocumentOutline";
 import { PdfPreview } from "./PdfPreview";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -143,10 +143,12 @@ export function DocumentPreview({
   path,
   content,
   directory,
+  outlineOpen = false,
 }: {
   path: string | null;
   content: string | null;
   directory?: string | null;
+  outlineOpen?: boolean;
 }): JSX.Element {
   if (path === null) {
     return (
@@ -172,7 +174,7 @@ export function DocumentPreview({
   if (isPdf(path)) {
     return (
       <div className="doc-preview pdf">
-        <PdfPreview src={rawSrc} />
+        <PdfPreview src={rawSrc} showOutline={outlineOpen} />
       </div>
     );
   }
@@ -239,9 +241,5 @@ export function DocumentPreview({
       </div>
     );
   }
-  return (
-    <div className="doc-preview" id="doc-scroll">
-      <MarkdownView content={content ?? ""} />
-    </div>
-  );
+  return <MarkdownDocView content={content ?? ""} showOutline={outlineOpen} />;
 }

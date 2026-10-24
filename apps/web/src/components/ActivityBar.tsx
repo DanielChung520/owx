@@ -143,16 +143,7 @@ export function ActivityBar({
       >
         <ExplorerIcon />
       </button>
-      <button
-        type="button"
-        className={`activity${active === "outline" && !collapsed ? " active" : ""}`}
-        aria-pressed={active === "outline" && !collapsed}
-        aria-label="大綱"
-        title="Outline"
-        onClick={() => onSelect("outline")}
-      >
-        <OutlineIcon />
-      </button>
+
       <button
         type="button"
         className={`activity${active === "graph" && !collapsed ? " active" : ""}`}
