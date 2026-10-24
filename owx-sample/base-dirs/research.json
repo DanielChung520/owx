@@ -1,0 +1,5 @@
+{
+  "id": "research",
+  "property": "研究專案",
+  "dirs": ["research", "literature", "notes", "data", "findings", "skills"]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "product",
+  "property": "產品文件",
+  "dirs": ["product", "features", "guides", "release-notes", "faq", "skills"]
+}

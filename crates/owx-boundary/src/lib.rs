@@ -156,6 +156,7 @@ pub fn router(state: AppState) -> Router {
         .route("/rpc/fs/move", post(rpc_fs_move))
         .route("/rpc/fs/delete", post(rpc_fs_delete))
         .route("/rpc/fs/info", get(rpc_fs_info))
+        .route("/rpc/fs/raw", get(rpc_fs_raw))
         .route("/rpc/import/file", post(rpc_import_file))
         .route("/rpc/import/notion", post(rpc_not_configured))
         .route("/rpc/convert", post(rpc_not_configured))
@@ -973,6 +974,82 @@ async fn rpc_fs_delete(
 struct FsInfoQuery {
     directory: String,
     path: String,
+}
+
+#[derive(serde::Deserialize)]
+struct FsRawQuery {
+    directory: String,
+    path: String,
+}
+
+fn content_type_for_path(path: &Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        Some("webp") => "image/webp",
+        Some("avif") => "image/avif",
+        Some("bmp") => "image/bmp",
+        Some("ico") => "image/x-icon",
+        Some("svg") => "image/svg+xml",
+        Some("pdf") => "application/pdf",
+        Some("html") | Some("htm") => "text/html; charset=utf-8",
+        Some("txt") | Some("log") | Some("md") => "text/plain; charset=utf-8",
+        Some("json") => "application/json; charset=utf-8",
+        Some("xml") => "application/xml; charset=utf-8",
+        Some("csv") => "text/csv; charset=utf-8",
+        Some("css") => "text/css; charset=utf-8",
+        Some("js") | Some("mjs") => "text/javascript; charset=utf-8",
+        Some("ts") | Some("tsx") | Some("jsx") => "text/plain; charset=utf-8",
+        Some("yaml") | Some("yml") => "text/yaml; charset=utf-8",
+        Some("mp3") => "audio/mpeg",
+        Some("wav") => "audio/wav",
+        Some("ogg") => "audio/ogg",
+        Some("m4a") => "audio/mp4",
+        Some("mp4") => "video/mp4",
+        Some("webm") => "video/webm",
+        Some("mov") => "video/quicktime",
+        Some("docx") => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        Some("xlsx") | Some("xlsm") => {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        }
+        Some("pptx") => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        _ => "application/octet-stream",
+    }
+}
+
+/// `GET /rpc/fs/raw`：受控讀取原始檔案（用於圖片／PDF／HTML／多媒體等預覽）。
+async fn rpc_fs_raw(
+    Query(query): Query<FsRawQuery>,
+) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
+    let root = Path::new(&query.directory);
+    let target =
+        safe_join(root, &query.path).map_err(|code| fail(StatusCode::BAD_REQUEST, code))?;
+    if !target.exists() {
+        return Err(fail(StatusCode::NOT_FOUND, "not_found"));
+    }
+    if target.is_dir() {
+        return Err(fail(StatusCode::BAD_REQUEST, "invalid_path"));
+    }
+    let bytes = std::fs::read(&target)
+        .map_err(|_| fail(StatusCode::INTERNAL_SERVER_ERROR, "read_failed"))?;
+    let content_type = content_type_for_path(&target);
+    let headers = [
+        (header::CONTENT_TYPE, content_type),
+        (header::CONTENT_DISPOSITION, "inline"),
+        (header::CACHE_CONTROL, "no-cache"),
+    ];
+    let mut response = Response::new(bytes.into());
+    *response.status_mut() = StatusCode::OK;
+    for (key, value) in headers {
+        response.headers_mut().insert(key, value.parse().unwrap());
+    }
+    Ok(response)
 }
 
 /// `GET /rpc/fs/info`：節點資訊（型別／大小／項目數／修改時間）。

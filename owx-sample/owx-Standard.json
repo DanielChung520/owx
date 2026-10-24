@@ -1,0 +1,788 @@
+{
+  "schema_version": "1",
+  "updated": "2026-10-20",
+  "note": "owx 標準目錄（規範目錄）。僅收錄『識別資料』（名稱／編號／發行機構／摘要）；嚴禁收錄標準原文。授權未知或需購買者，先以 summary 佔位，取得授權後增補。",
+  "license_legend": {
+    "public-domain": "公眾領域（如美國政府著作）——可收錄全文",
+    "open": "開放／可再利用（法規、開放授權）——通常可收錄全文（依條款）",
+    "restricted": "免費可讀但再散布受限——僅摘要＋連結",
+    "proprietary": "付費／著作權保留——禁止複製，僅摘要＋連結＋取得方式"
+  },
+  "acquisition_legend": {
+    "full": "已收錄全文",
+    "summary": "已收錄摘要（待增補）",
+    "byo": "由使用者自備已授權副本（本機、不散布）"
+  },
+  "categories": [
+    {
+      "id": "info-security",
+      "name": "資訊安全／資通安全",
+      "required": true,
+      "standards": [
+        {
+          "id": "ISO-27001",
+          "name": "ISO/IEC 27001:2022",
+          "title": "資訊安全管理系統（ISMS）— 要求",
+          "issuer": "ISO/IEC",
+          "year": 2022,
+          "required": true,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/standard/27001.html",
+          "summary": "建立、實作、維持與持續改善資訊安全管理系統（ISMS）之要求；全球最廣泛採用的資安管理標準。"
+        },
+        {
+          "id": "ISO-27002",
+          "name": "ISO/IEC 27002:2022",
+          "title": "資訊安全控制措施",
+          "issuer": "ISO/IEC",
+          "year": 2022,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "資訊安全控制措施之作業指引，供組織選擇與實作控制項（搭配 ISO/IEC 27001）。"
+        },
+        {
+          "id": "ISO-27017",
+          "name": "ISO/IEC 27017:2015",
+          "title": "雲端服務資訊安全控制",
+          "issuer": "ISO/IEC",
+          "year": 2015,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "以 ISO/IEC 27002 為基礎之雲端服務資安控制實務準則（雲服務提供者與客戶）。"
+        },
+        {
+          "id": "NIST-CSF",
+          "name": "NIST CSF 2.0",
+          "title": "網路安全框架",
+          "issuer": "NIST",
+          "year": 2024,
+          "license": "public-domain",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://www.nist.gov/cyberframework",
+          "summary": "跨產業網路安全風險管理框架，2.0 版以 GOVERN 為核心並含 IDENTIFY／PROTECT／DETECT／RESPOND／RECOVER 功能。"
+        },
+        {
+          "id": "NIST-800-53",
+          "name": "NIST SP 800-53 Rev.5",
+          "title": "資訊系統與組織之安全與隱私控制",
+          "issuer": "NIST",
+          "license": "public-domain",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://csrc.nist.gov/pubs/sp/800/53/r5/final",
+          "summary": "聯邦資訊系統之安全與隱私控制目錄，廣泛作為控制項基準。"
+        },
+        {
+          "id": "SOC2",
+          "name": "SOC 2（Type I / II）",
+          "title": "服務組織控制—信任服務準則",
+          "issuer": "AICPA",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.aicpa-cima.com/",
+          "summary": "服務組織之控制查核報告，依信任服務準則（安全性／可用性／處理完整性／機密性／隱私）。"
+        },
+        {
+          "id": "ISO-15408-CC",
+          "name": "ISO/IEC 15408（Common Criteria）",
+          "title": "IT 安全評估準則",
+          "issuer": "ISO/IEC",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "IT 產品安全評估之共同準則（EAL 保證等級、保護剖面與安全目標）。"
+        },
+        {
+          "id": "IEC-62443",
+          "name": "IEC 62443 系列",
+          "title": "工業自動化與控制系統資安",
+          "issuer": "IEC",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iec.ch/",
+          "summary": "工業自動化與控制系統（IACS／OT）之網路安全標準系列（產品、系統整合、營運）。"
+        },
+        {
+          "id": "ISO-22301",
+          "name": "ISO 22301:2019",
+          "title": "營運持續管理系統",
+          "issuer": "ISO",
+          "year": 2019,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "營運持續管理系統（BCMS）之要求，確保中斷事件下之韌性與復原。"
+        }
+      ]
+    },
+    {
+      "id": "privacy",
+      "name": "隱私／個資保護",
+      "standards": [
+        {
+          "id": "ISO-27701",
+          "name": "ISO/IEC 27701:2025",
+          "title": "隱私資訊管理系統（PIMS）",
+          "issuer": "ISO/IEC",
+          "year": 2025,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "ISO/IEC 27001／27002 之隱私延伸，作為 PII 控制者與處理者之隱私資訊管理系統要求。"
+        },
+        {
+          "id": "ISO-27018",
+          "name": "ISO/IEC 27018:2025",
+          "title": "公雲 PII 處理者保護",
+          "issuer": "ISO/IEC",
+          "year": 2025,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "公雲中作為 PII 處理者之個資保護作業準則。"
+        },
+        {
+          "id": "GDPR",
+          "name": "EU GDPR (Regulation 2016/679)",
+          "title": "一般資料保護規則",
+          "issuer": "European Union",
+          "year": 2016,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+          "summary": "歐盟個人資料處理與自由流動之保護規則（當事人權利、控制者／處理者義務）。"
+        },
+        {
+          "id": "TW-PDPA",
+          "name": "個人資料保護法（台灣）",
+          "title": "個資法",
+          "issuer": "臺灣",
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://law.moj.gov.tw/",
+          "summary": "臺灣個人資料之蒐集、處理與利用之規範。"
+        },
+        {
+          "id": "IEEE-2857",
+          "name": "IEEE 2857-2021",
+          "title": "隱私工程指引",
+          "issuer": "IEEE",
+          "year": 2021,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://standards.ieee.org/",
+          "summary": "於軟體與系統開發生命週期落實隱私（privacy-by-design）之工程指引。"
+        }
+      ]
+    },
+    {
+      "id": "software-engineering",
+      "name": "系統／軟體工程（SRS 參考規範）",
+      "standards": [
+        {
+          "id": "ISO-IEC-IEEE-29148",
+          "name": "ISO/IEC/IEEE 29148:2018",
+          "title": "需求工程（取代 IEEE 830）",
+          "issuer": "ISO/IEC/IEEE",
+          "year": 2018,
+          "required": true,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/standard/72089.html",
+          "summary": "系統與軟體需求工程之生命週期流程與資訊項目（含 SRS 之內容、結構與品質屬性）。"
+        },
+        {
+          "id": "ISO-IEC-IEEE-12207",
+          "name": "ISO/IEC/IEEE 12207:2017",
+          "title": "軟體生命週期流程",
+          "issuer": "ISO/IEC/IEEE",
+          "year": 2017,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "軟體系統之生命週期流程定義（協定、技術管理、技術執行）。"
+        },
+        {
+          "id": "ISO-IEC-IEEE-15288",
+          "name": "ISO/IEC/IEEE 15288:2023",
+          "title": "系統生命週期流程",
+          "issuer": "ISO/IEC/IEEE",
+          "year": 2023,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "人造系統之系統生命週期流程（跨產業通用）。"
+        },
+        {
+          "id": "ISO-IEC-25010",
+          "name": "ISO/IEC 25010:2023",
+          "title": "系統與軟體品質模型（SQuaRE）",
+          "issuer": "ISO/IEC",
+          "year": 2023,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "產品品質模型，定義功能性、可靠性、可用性、維護性、安全性等品質特性。"
+        },
+        {
+          "id": "ISO-IEC-25012",
+          "name": "ISO/IEC 25012:2008",
+          "title": "資料品質模型",
+          "issuer": "ISO/IEC",
+          "year": 2008,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "資訊系統資料品質模型（固有與系統相依之品質特性）。"
+        },
+        {
+          "id": "IEEE-730",
+          "name": "IEEE 730-2014",
+          "title": "軟體品質保證流程",
+          "issuer": "IEEE",
+          "year": 2014,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://standards.ieee.org/",
+          "summary": "軟體品質保證（SQA）流程之規劃、控制與執行要求（與 12207 調和）。"
+        },
+        {
+          "id": "IEEE-1012",
+          "name": "IEEE 1012-2016",
+          "title": "軟體驗證與確認（V&V）",
+          "issuer": "IEEE",
+          "year": 2016,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://standards.ieee.org/",
+          "summary": "軟體 V&V 流程與文件之要求（各完整性等級）。"
+        },
+        {
+          "id": "IEEE-829",
+          "name": "IEEE 829-2008",
+          "title": "軟體測試文件",
+          "issuer": "IEEE",
+          "year": 2008,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://standards.ieee.org/",
+          "summary": "軟體測試文件之規格（測試計畫、設計、案例、報告等）。"
+        }
+      ]
+    },
+    {
+      "id": "esg",
+      "name": "ESG／永續",
+      "standards": [
+        {
+          "id": "ISO-14067",
+          "name": "ISO 14067:2018",
+          "title": "產品碳足跡（CFP）— 量化要求與指引",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "產品碳足跡之量化方法與報告要求（依 LCA 原則）。"
+        },
+        {
+          "id": "ISO-14064-1",
+          "name": "ISO 14064-1:2018",
+          "title": "溫室氣體—組織層級量化與報告",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "組織層級溫室氣體排放與移除之量化與報告規格。"
+        },
+        {
+          "id": "ISO-14064-2",
+          "name": "ISO 14064-2:2019",
+          "title": "溫室氣體—專案層級",
+          "issuer": "ISO",
+          "year": 2019,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "專案層級減量／移除增強之量化、監測與報告規格。"
+        },
+        {
+          "id": "ISO-14064-3",
+          "name": "ISO 14064-3:2019",
+          "title": "溫室氣體—查證與確證",
+          "issuer": "ISO",
+          "year": 2019,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "溫室氣體聲明之查證與確證規格。"
+        },
+        {
+          "id": "ISO-14001",
+          "name": "ISO 14001:2015",
+          "title": "環境管理系統",
+          "issuer": "ISO",
+          "year": 2015,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "環境管理系統（EMS）之要求。"
+        },
+        {
+          "id": "ISO-26000",
+          "name": "ISO 26000:2010",
+          "title": "社會責任指引",
+          "issuer": "ISO",
+          "year": 2010,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "組織社會責任之指引（非驗證標準）。"
+        },
+        {
+          "id": "IFRS-S1",
+          "name": "IFRS S1",
+          "title": "永續相關財務資訊揭露通則",
+          "issuer": "ISSB",
+          "year": 2023,
+          "license": "restricted",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/",
+          "summary": "永續相關財務資訊揭露之一般要求（ISSB）。"
+        },
+        {
+          "id": "IFRS-S2",
+          "name": "IFRS S2",
+          "title": "氣候相關揭露",
+          "issuer": "ISSB",
+          "year": 2023,
+          "license": "restricted",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/",
+          "summary": "氣候相關風險與機會之揭露要求（ISSB）。"
+        },
+        {
+          "id": "GRI",
+          "name": "GRI Standards",
+          "title": "永續報導準則",
+          "issuer": "GRI",
+          "license": "restricted",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.globalreporting.org/",
+          "summary": "全球最廣泛使用之永續報導準則（通用、行業、主題準則）。"
+        },
+        {
+          "id": "SASB",
+          "name": "SASB Standards",
+          "title": "產業永續會計準則",
+          "issuer": "ISSB/SASB",
+          "license": "restricted",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://sasb.ifrs.org/",
+          "summary": "依產業別之重大永續議題與指標（會計準則）。"
+        },
+        {
+          "id": "TCFD",
+          "name": "TCFD",
+          "title": "氣候相關財務揭露建議",
+          "issuer": "FSB",
+          "year": 2017,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://www.fsb-tcfd.org/",
+          "summary": "氣候相關財務揭露之四大支柱：治理、策略、風險管理、指標與目標。"
+        },
+        {
+          "id": "TNFD",
+          "name": "TNFD",
+          "title": "自然相關財務揭露",
+          "issuer": "TNFD",
+          "year": 2023,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://tnfd.global/",
+          "summary": "自然相關風險與機會之揭露框架（LEAP 方法）。"
+        },
+        {
+          "id": "GHG-Protocol",
+          "name": "GHG Protocol",
+          "title": "溫室氣體盤查議定書",
+          "issuer": "WRI/WBCSD",
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://ghgprotocol.org/",
+          "summary": "企業與產品溫室氣體盤查之標準（Scope 1/2/3）。"
+        },
+        {
+          "id": "SBTi",
+          "name": "SBTi",
+          "title": "科學基礎減量目標",
+          "issuer": "SBTi",
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://sciencebasedtargets.org/",
+          "summary": "以科學為基礎之減碳目標設定方法與淨零標準。"
+        },
+        {
+          "id": "CSRD-ESRS",
+          "name": "CSRD / ESRS",
+          "title": "企業永續報導指令／準則",
+          "issuer": "European Union",
+          "year": 2022,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://eur-lex.europa.eu/eli/dir/2022/2464/oj",
+          "summary": "歐盟企業永續報導指令及其歐洲永續報導準則（雙重重大性）。"
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "name": "公司治理／法遵／反賄賂",
+      "standards": [
+        {
+          "id": "OECD-CG",
+          "name": "OECD Principles of Corporate Governance",
+          "title": "公司治理原則",
+          "issuer": "OECD",
+          "year": 2023,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://www.oecd.org/corporate/principles-corporate-governance/",
+          "summary": "公司治理之國際基準原則（G20/OECD）。"
+        },
+        {
+          "id": "TW-CG",
+          "name": "上市上櫃公司治理實務守則／公司治理評鑑",
+          "title": "公司治理",
+          "issuer": "臺灣證交所／櫃買中心",
+          "license": "restricted",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://cg.twse.com.tw/",
+          "summary": "臺灣上市上櫃公司治理實務守則與公司治理評鑑指標。"
+        },
+        {
+          "id": "ISO-37001",
+          "name": "ISO 37001:2025",
+          "title": "反賄賂管理系統",
+          "issuer": "ISO",
+          "year": 2025,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "反賄賂管理系統（ABMS）之要求與指引。"
+        },
+        {
+          "id": "ISO-37301",
+          "name": "ISO 37301:2021",
+          "title": "法遵管理系統",
+          "issuer": "ISO",
+          "year": 2021,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "法遵管理系統（CMS）之要求（合規義務之治理）。"
+        },
+        {
+          "id": "ISO-30301",
+          "name": "ISO 30301:2019",
+          "title": "紀錄管理系統",
+          "issuer": "ISO",
+          "year": 2019,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "紀錄管理系統之要求（文件治理與證據留存）。"
+        }
+      ]
+    },
+    {
+      "id": "risk-continuity",
+      "name": "風險／品質／服務管理",
+      "standards": [
+        {
+          "id": "ISO-31000",
+          "name": "ISO 31000:2018",
+          "title": "風險管理指引",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "跨領域風險管理之原則、框架與流程。"
+        },
+        {
+          "id": "ISO-9001",
+          "name": "ISO 9001:2015",
+          "title": "品質管理系統",
+          "issuer": "ISO",
+          "year": 2015,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "品質管理系統（QMS）之要求（流程導向、風險思維）。"
+        },
+        {
+          "id": "ISO-IEC-20000-1",
+          "name": "ISO/IEC 20000-1:2018",
+          "title": "IT 服務管理系統",
+          "issuer": "ISO/IEC",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "IT 服務管理系統（SMS）之要求。"
+        },
+        {
+          "id": "ISO-30401",
+          "name": "ISO 30401:2018",
+          "title": "知識管理系統",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "知識管理系統之要求與指引（與 owx 文件優先定位相關）。"
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "AI 治理／倫理",
+      "standards": [
+        {
+          "id": "ISO-IEC-42001",
+          "name": "ISO/IEC 42001:2023",
+          "title": "AI 管理系統",
+          "issuer": "ISO/IEC",
+          "year": 2023,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "AI 管理系統（AIMS）之要求；首個 AI 管理系統國際標準。"
+        },
+        {
+          "id": "ISO-IEC-23894",
+          "name": "ISO/IEC 23894:2023",
+          "title": "AI 風險管理指引",
+          "issuer": "ISO/IEC",
+          "year": 2023,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "以 ISO 31000 為基礎之 AI 風險管理指引。"
+        },
+        {
+          "id": "NIST-AI-RMF",
+          "name": "NIST AI RMF 1.0 (AI 100-1)",
+          "title": "AI 風險管理框架",
+          "issuer": "NIST",
+          "year": 2023,
+          "license": "public-domain",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://www.nist.gov/itl/ai-risk-management-framework",
+          "summary": "AI 風險管理框架（GOVERN／MAP／MEASURE／MANAGE）與可信賴 AI 特性。"
+        },
+        {
+          "id": "OECD-AI",
+          "name": "OECD AI Principles",
+          "title": "AI 原則",
+          "issuer": "OECD",
+          "year": 2019,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://oecd.ai/en/ai-principles",
+          "summary": "以人為本、可信賴 AI 之原則（含問責與透明）。"
+        },
+        {
+          "id": "IEEE-7000",
+          "name": "IEEE 7000-2021",
+          "title": "價值導向設計",
+          "issuer": "IEEE",
+          "year": 2021,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://standards.ieee.org/",
+          "summary": "將倫理價值與利害關係人觀點納入系統設計之流程。"
+        },
+        {
+          "id": "EU-AI-Act",
+          "name": "EU AI Act (Regulation 2024/1689)",
+          "title": "歐盟人工智慧法",
+          "issuer": "European Union",
+          "year": 2024,
+          "license": "open",
+          "full_text_allowed": true,
+          "acquisition": "summary",
+          "source_url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
+          "summary": "歐盟 AI 風險分級（不可接受／高風險／有限／最低）之監管框架。"
+        }
+      ]
+    },
+    {
+      "id": "industry-safety",
+      "name": "產業專用（功能安全／資安）",
+      "standards": [
+        {
+          "id": "IEC-61508",
+          "name": "IEC 61508",
+          "title": "功能安全（E/E/PE）",
+          "issuer": "IEC",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iec.ch/",
+          "summary": "E/E/PE 安全相關系統之功能安全基礎標準（SIL 1–4）。"
+        },
+        {
+          "id": "DO-178C",
+          "name": "DO-178C",
+          "title": "機載軟體",
+          "issuer": "RTCA/EUROCAE",
+          "year": 2011,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.rtca.org/",
+          "summary": "航空機載軟體之開發保證（依軟體等級 A–E）。"
+        },
+        {
+          "id": "ISO-26262",
+          "name": "ISO 26262:2018",
+          "title": "道路車輛功能安全",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "道路車輛 E/E 系統之功能安全（ASIL A–D）。"
+        },
+        {
+          "id": "ISO-21448",
+          "name": "ISO 21448:2022",
+          "title": "預期功能安全（SOTIF）",
+          "issuer": "ISO",
+          "year": 2022,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "預期功能安全（SOTIF），處理功能不足與可預見誤用之風險。"
+        },
+        {
+          "id": "ISO-SAE-21434",
+          "name": "ISO/SAE 21434:2021",
+          "title": "道路車輛資安工程",
+          "issuer": "ISO/SAE",
+          "year": 2021,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "道路車輛之網路安全工程（生命週期、TARA）。"
+        },
+        {
+          "id": "IEC-62304",
+          "name": "IEC 62304:2006+A1",
+          "title": "醫療器材軟體生命週期",
+          "issuer": "IEC",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iec.ch/",
+          "summary": "醫療器材軟體之生命週期流程（含 SaMD，軟體安全等級 A–C）。"
+        },
+        {
+          "id": "ISO-13485",
+          "name": "ISO 13485:2016",
+          "title": "醫療器材品質管理系統",
+          "issuer": "ISO",
+          "year": 2016,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "醫療器材品質管理系統之要求（法規用途）。"
+        },
+        {
+          "id": "EN-50128",
+          "name": "EN 50128",
+          "title": "鐵路應用—軟體",
+          "issuer": "CENELEC",
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.cencenelec.eu/",
+          "summary": "鐵路控制與防護系統之軟體開發標準（SW SIL）。"
+        },
+        {
+          "id": "ISO-45001",
+          "name": "ISO 45001:2018",
+          "title": "職業安全衛生管理系統",
+          "issuer": "ISO",
+          "year": 2018,
+          "license": "proprietary",
+          "full_text_allowed": false,
+          "acquisition": "summary",
+          "source_url": "https://www.iso.org/",
+          "summary": "職業安全衛生管理系統（OH&S）之要求。"
+        }
+      ]
+    }
+  ]
+}

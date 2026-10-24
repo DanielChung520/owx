@@ -1165,7 +1165,11 @@ export function App(): JSX.Element {
               onCancel={() => setEditing(false)}
             />
           ) : (
-            <DocumentPreview path={activeDoc?.path ?? null} content={activeDoc?.content ?? null} />
+            <DocumentPreview
+              path={activeDoc?.path ?? null}
+              content={activeDoc?.content ?? null}
+              directory={projectRoot}
+            />
           )}
         </section>
       ) : null}

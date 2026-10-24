@@ -1,0 +1,5 @@
+{
+  "id": "patent",
+  "property": "專利文件",
+  "dirs": ["patents", "drafts", "prior-art", "figures", "disclosures", "skills"]
+}

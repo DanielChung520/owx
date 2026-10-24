@@ -1,0 +1,5 @@
+{
+  "id": "system-docs",
+  "property": "系統開發文件",
+  "dirs": ["docs", "specs", "design", "api", "adr", "tests", "skills"]
+}

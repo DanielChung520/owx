@@ -1,0 +1,5 @@
+{
+  "id": "process",
+  "property": "流程規劃",
+  "dirs": ["processes", "workflows", "templates", "roles", "kpi", "skills"]
+}

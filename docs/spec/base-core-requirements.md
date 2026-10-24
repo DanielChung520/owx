@@ -164,7 +164,15 @@ flowchart TB
     - 錯誤：瀏覽器不可用之指令（如 `/warp`、`/org`、`/variants`、`/workspaces`）顯示為不可用並附原因，不得偽造為可執行。
 - **FR-H-12** **專案檔案總管（Explorer）**：側面板提供**專案檔案樹**——專案切換器（`GET /project`）＋**延遲載入**的目錄樹（`GET /file?path=<dir>&directory=<root>`；entries 為 `{name,path,absolute,type,ignored}`）。預設／初始專案＝**當前作用中專案**，可設定，初始為 **owx**。
 - **FR-H-13** **文件大綱（Outline）**：側面板提供**當前預覽文件**的 markdown 標題（H1–H6）大綱，於 **client 端**解析；點擊標題捲動文件預覽至對應錨點。
-- **FR-H-14** **文件預覽（DocumentPreview，多格式）**：以 **client 端**渲染當前文件——**markdown**（`react-markdown`＋**GFM**：表格、任務清單、刪除線、自動連結、腳註、引用、分隔線、圍籬程式碼；含**標題錨點**與 **Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…，以對應渲染器）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**僅 `md` 可編輯**（見 FR-H-23），其餘唯讀。
+- **FR-H-14** **文件預覽（DocumentPreview，多格式）**：以 **client 端**渲染當前文件——**markdown**（`react-markdown`＋**GFM**：表格、任務清單、刪除線、自動連結、腳註、引用、分隔線、圍籬程式碼；含**標題錨點**與 **Mermaid 圖表**）。**主流格式皆需提供唯讀預覽**，僅 **`md` 可編輯**（見 FR-H-23）：
+  - **圖片**：`png`、`jpg`、`jpeg`、`gif`、`webp`、`avif`、`bmp`、`ico`、`svg`（直接以 `<img>` 預覽，置中且等比例縮放）
+  - **PDF**：`pdf`（以 `pdf.js` 唯讀預覽）
+  - **HTML**：`html`、`htm`（**sandboxed** `<iframe>` 唯讀載入，預設停用腳本）
+  - **純文字／程式碼**：`txt`、`log`、`json`、`yaml`、`yml`、`xml`、`csv`、`ini`、`conf`、`sh`、`ts`、`js`、`tsx`、`jsx`、`py`、`rs`、`go`、`java`、`c`、`cpp`、`h`、`sql`（以 `<pre>` 唯讀顯示）
+  - **Office（唯讀）**：`.docx`（`mammoth` 抽取內容）、`.xlsx`／`.xlsm`（`xlsx` 顯示工作表清單與表格）、`.pptx`（優先嘗試唯讀渲染，否則顯示明確提示並建議下載檢視）
+  - **多媒體（基礎播放）**：`.mp3`、`.wav`、`.ogg`、`.m4a`（`<audio controls>`）、`.mp4`、`.webm`、`.mov`（`<video controls>`）
+- **載入方式**：圖片／PDF／HTML／多媒體／Office 所需的原始檔案**一律**透過 **owx harness** 之受控路由 `GET /rpc/fs/raw?directory=...&path=...` 取得（沿用 `safe_join`、禁止目錄、禁止路徑逃逸）。**不得**使用 `file://`。
+- 含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。
 - **FR-H-15** **版面區域可收合／可調寬**：三區（左側面板 Explorer／Outline、中 DocumentPreview、右 Chat）各自**可收合（collapse）與可開啟（re-open）**；相鄰區之間有可拖曳 **resizer** 調整寬度——側面板 **160–480px**、Chat **300–760px**，中間 DocumentPreview 為**彈性填充**（寬度由兩側拖曳間接決定），預設寬側面板 **280px**、Chat **400px**；收合後以**常駐控制**復原——左側面板經 **ActivityBar** 圖示（點擊當前作用中圖示即切換）、DocumentPreview／Chat 經**對側區標頭**的切換按鈕；**ActivityBar（48px 圖示列）恆常可見**。
 - **FR-H-16** **專案入口頁與專案控制（ProjectHome／ProjectMenu）**：Explorer 標頭於當前專案名右側提供**專案控制選單**（開啟／新增／關閉專案）；**關閉專案**切換為**全頁專案入口**（無側欄、無 chat）——卡片網格列出 **`~/knowledge` 下之文件專案**（由 **owx harness** `GET /rpc/knowledge/list` 提供；卡片顯示名稱與標籤）；**本頁即 owx 首頁（預設進入）**。**（文件專案的真實來源是 `~/knowledge`，非 opencode `GET /project`。）**
 - **FR-H-17** **新增專案（建立於 `~/knowledge`）**：以 **modal** 輸入名稱、文件英文名（作為資料夾／專案識別）、標籤（以「,」分隔多個）；系統生成**專案編號**與**建立時間**；**建立專案根目錄時自動生成 `AGENTS.md`（一般性規範）**，優先取自樣本庫 `owx-sample/templates/AGENTS.md` 並替換 `{{project_name}}`，樣本缺檔時以內建最小內容寫入；建立後**開啟該專案並執行 opencode `/init`**。建立由 **owx harness** 之 `POST /rpc/project/create` 負責（opencode 無建立專案 API；見 [`ADR-0008`](../adr/ADR-0008-project-lifecycle-owned-by-owx-harness.md)）。

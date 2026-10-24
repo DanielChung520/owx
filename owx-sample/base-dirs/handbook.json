@@ -1,0 +1,5 @@
+{
+  "id": "handbook",
+  "property": "公司手冊",
+  "dirs": ["handbook", "policies", "onboarding", "processes", "faq", "skills"]
+}

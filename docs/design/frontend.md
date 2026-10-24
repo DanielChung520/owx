@@ -123,8 +123,15 @@ flowchart LR
 ### 2.5 文件預覽（DocumentPreview）
 
 - **目的**：呈現當前文件的渲染結果，供閱讀與對照。
-- **核心行為**：**client 端**多格式渲染——**markdown**（`react-markdown`＋**GFM**：表格、任務清單、刪除線、自動連結、腳註；含標題錨點供 §2.4 捲動、**Mermaid 圖表**）與**其他格式之唯讀預覽**（PDF／Word／CSV／Excel／圖片 png・jpg…）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**文件預覽為多分頁**（可同時開啟多檔、切換、單頁 `×` 關閉）；分頁列右側「⋯」浮動選單——**關閉全部文件／文件全部提交／搜尋**（FR-H-25）。**僅 `md` 可編輯**（§2.12 編輯器），其餘唯讀。
+- **核心行為**：**client 端**多格式渲染——**markdown**（`react-markdown`＋**GFM**：表格、任務清單、刪除線、自動連結、腳註；含標題錨點供 §2.4 捲動、**Mermaid 圖表**）與**主流格式唯讀預覽**（**圖片**／**PDF**／**HTML**／**純文字／程式碼**／**Office（docx/xlsx/xlsm/pptx）**／**多媒體（mp3/wav/ogg/m4a/mp4/webm/mov）**）；含 **doc-status 徽章**（**重用 FR-CARRIER-10 語意**）。**文件預覽為多分頁**（可同時開啟多檔、切換、單頁 `×` 關閉）；分頁列右側「⋯」浮動選單——**關閉全部文件／文件全部提交／搜尋**（FR-H-25）。**僅 `md` 可編輯**（§2.12 編輯器），其餘**一律唯讀**。
 - **渲染器**：`MarkdownView`（`components/MarkdownView.tsx`）為**唯一** markdown 渲染入口——`remark-gfm` 擴充語法、標題產生 `slugify` 錨點（供 §2.4）、表格外包 `.md-table` 以橫向捲動、```mermaid 圍籬交由 `MermaidBlock` 以**動態 `import("mermaid")`** 渲染（`securityLevel: "strict"`；未就緒顯示原始碼、失敗顯示錯誤＋原始碼，不中斷預覽）。預覽、§2.12 編輯器並排、§2.7 標準規範皆共用。
+- **多格式細節**：
+  - **圖片**：`png`／`jpg`／`jpeg`／`gif`／`webp`／`avif`／`bmp`／`ico`／`svg`，透過 **`GET /rpc/fs/raw`** 載入，置中且**等比例縮放**（`max-width: 100%`、`max-height: 100%`）。
+  - **PDF**：`pdf`，以 **`pdf.js`** 唯讀渲染。
+  - **HTML**：`html`／`htm`，以**沙箱化** `<iframe srcdoc>` 載入，**禁用腳本**，僅唯讀瀏覽。
+  - **多媒體**：`<audio controls>`／`<video controls>`，同樣透過 **`GET /rpc/fs/raw`** 載入（受控路由）。
+  - **Office**：`.docx`（`mammoth`）轉換為安全 HTML 顯示；`.xlsx`／`.xlsm`（`xlsx`）以**工作表表格**方式顯示；`.pptx` 暫以明確提示或簡易預覽，視授權與可行性再擴充。
+- **載入規則**：二進位／多媒體格式**不得**將原始內容塞入 `openDocs.content` 字串；一律改由元件以 URL 載入。**原始檔案讀取一律經 `GET /rpc/fs/raw`**（沿用 `safe_join`、禁止路徑逃逸、禁止目錄）。
 - **Mermaid layout 限制（授權）**：`mermaid` 之 `elkjs` 依賴為 **EPL-2.0**，依 [`licensing.md`](../standards/governance/licensing.md) §5.1 以 `packages/elkjs-stub`（MIT）取代——**預設 dagre layout 正常**，`layout: elk` 圖表降級為錯誤訊息；交付物不含 EPL 碼。
 - **對應 FR**：FR-H-14（文件預覽）、FR-CARRIER-10（文件狀態聚合）。
 

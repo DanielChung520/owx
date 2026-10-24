@@ -1,0 +1,5 @@
+{
+  "id": "report",
+  "property": "一般報告",
+  "dirs": ["reports", "drafts", "attachments", "archive", "skills"]
+}

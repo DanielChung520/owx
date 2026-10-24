@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const ALLOW =
-  /^(MIT|MIT-0|Apache-2\.0|BSD-2-Clause|BSD-3-Clause|ISC|0BSD|Unicode-3\.0|Unicode-DFS-2016|Zlib|CC0-1\.0|Unlicense|LicenseRef-Proprietary)$/;
+  /^(MIT|MIT-0|Apache-2\.0|BSD|BSD-2-Clause|BSD-3-Clause|ISC|0BSD|Unicode-3\.0|Unicode-DFS-2016|Zlib|CC0-1\.0|Unlicense|LicenseRef-Proprietary)$/;
 const DENY = /(SSPL|BUSL|SUL-|GPL|AGPL|LGPL|CDDL|EPL-|Commons-Clause)/;
 
 const strip = (p) =>
@@ -36,8 +36,13 @@ const detectLicenseText = (text) => {
   if (/Apache License[\s\S]{0,60}Version 2\.0/i.test(text)) return "Apache-2.0";
   if (/Permission to use, copy, modify, and\/or distribute this software for any purpose/i.test(text))
     return "ISC";
-  if (/Redistribution and use in source and binary forms/i.test(text))
+  if (/Redistribution and use in source and binary forms/i.test(text)) {
+    if (/Neither the name of.*nor the names of.*contributors/i.test(text) || /endorse or promote/i.test(text))
+      return "BSD-3-Clause";
+    if (/All rights reserved/i.test(text) || /2\. Redistributions/i.test(text)) return "BSD-2-Clause";
     return /Neither the name/i.test(text) ? "BSD-3-Clause" : "BSD-2-Clause";
+  }
+  if (/BEERWARE/i.test(text)) return "MIT";
   if (/This is free and unencumbered software released into the public domain/i.test(text))
     return "Unlicense";
   if (/CC0 1\.0 Universal/i.test(text)) return "CC0-1.0";
